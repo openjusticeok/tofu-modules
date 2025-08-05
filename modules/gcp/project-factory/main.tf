@@ -112,9 +112,7 @@ resource "google_service_account" "tofu_provisioner_sa" {
 
 # Grant Tofu Provisioner SA roles on the project
 resource "google_project_iam_member" "tofu_provisioner_sa_project_roles" {
-  count = var.enable_tofu_backend_setup ? 1 : 0
-
-  for_each = toset(var.tofu_provisioner_sa_project_roles)
+  for_each = var.enable_tofu_backend_setup ? toset(var.tofu_provisioner_sa_project_roles) : toset([])
 
   project = google_project.new_project.project_id
   role    = each.key
