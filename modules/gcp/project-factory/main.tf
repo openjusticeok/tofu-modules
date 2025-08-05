@@ -6,10 +6,7 @@ resource "google_project" "new_project" {
   folder_id       = var.folder_id
   org_id          = var.org_id # Only specify if folder_id is null and project is directly under an org
   labels          = var.labels
-
-  # lifecycle {
-  #   prevent_destroy = true # Optional: prevent accidental deletion of the project
-  # }
+  deletion_policy = "DELETE"
 }
 
 # Resource to enable specified APIs on the new project
