@@ -82,12 +82,6 @@ variable "disable_dependent_services" {
   default     = true
 }
 
-variable "disable_services_on_destroy" {
-  description = "Whether to disable the APIs when the project is destroyed. Default is true."
-  type        = bool
-  default     = true
-}
-
 # --- Variables for Tofu Backend Setup ---
 variable "enable_tofu_backend_setup" {
   description = "If true, creates a GCS bucket for Tofu state and a dedicated Tofu provisioner service account."

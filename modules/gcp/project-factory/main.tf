@@ -20,7 +20,7 @@ resource "google_project_service" "activated_apis" {
   project                    = google_project.new_project.project_id
   service                    = each.key
   disable_dependent_services = var.disable_dependent_services
-  disable_on_destroy         = var.disable_services_on_destroy
+  disable_on_destroy         = true
 
   # Explicit dependency to ensure project creation is complete
   # and billing is properly associated before enabling APIs.
