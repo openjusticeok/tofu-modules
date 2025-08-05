@@ -110,13 +110,16 @@ resource "google_service_account" "tofu_provisioner_sa" {
   depends_on = [google_project_service.activated_apis["iam.googleapis.com"]]
 }
 
-# Grant Tofu Provisioner SA roles on the project
+# Grant Tofu Provisioner SA roles on the project, making sure it is the ONLY owner. This removes ownership from the Tofu orchestrator that provisions our projects from the infrastructure repo.
 resource "google_project_iam_member" "tofu_provisioner_sa_project_roles" {
   for_each = var.enable_tofu_backend_setup ? toset(var.tofu_provisioner_sa_project_roles) : toset([])
 
   project = google_project.new_project.project_id
-  role    = each.key
-  member  = "serviceAccount:${google_service_account.tofu_provisioner_sa[0].email}" # Access via index due to count
+  role = each.key
+
+  members = [
+    "serviceAccount:${google_service_account.tofu_provisioner_sa[0].email}" # Access via index due to count
+  ]
 
   depends_on = [google_service_account.tofu_provisioner_sa]
 }
