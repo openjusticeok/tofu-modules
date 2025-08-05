@@ -50,9 +50,6 @@ variable "activate_apis" {
     "iamcredentials.googleapis.com",     // For SA impersonation capabilities
     "logging.googleapis.com",            // Cloud Logging API
     "monitoring.googleapis.com",         // Cloud Monitoring API
-    "container.googleapis.com",          // Kubernetes Engine API (example, can be removed)
-    "sqladmin.googleapis.com",           // Cloud SQL Admin API (example, can be removed)
-    "run.googleapis.com"                 // Cloud Run API (example, can be removed)
   ]
 }
 
