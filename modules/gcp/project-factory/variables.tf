@@ -119,3 +119,42 @@ variable "tofu_provisioner_sa_project_roles" {
   default     = ["roles/owner"] # Opinionated default: owner for broad provisioning capabilities
 }
 
+# --- Variables for Workload Identity Federation (WIF) ---
+variable "enable_wif" {
+  description = "If true, creates Workload Identity Federation resources to allow GitHub Actions to impersonate the Tofu provisioner service account. Requires enable_tofu_backend_setup to be true."
+  type        = bool
+  default     = false
+}
+
+variable "github_repository" {
+  description = "The GitHub repository (in 'owner/repo' format) that should be allowed to impersonate the Tofu provisioner service account via WIF. Required if enable_wif is true."
+  type        = string
+  default     = null
+  validation {
+    condition = var.enable_wif == false || (var.github_repository != null && can(regex("^[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+$", var.github_repository)))
+    error_message = "GitHub repository must be in 'owner/repo' format when enable_wif is true."
+  }
+}
+
+variable "wif_pool_id" {
+  description = "The ID for the Workload Identity Pool. Defaults to 'github-actions-pool'."
+  type        = string
+  default     = "github-actions-pool"
+}
+
+variable "wif_provider_id" {
+  description = "The ID for the Workload Identity Provider within the pool. Defaults to 'github-provider'."
+  type        = string
+  default     = "github-provider"
+}
+
+variable "github_actions_conditions" {
+  description = "Additional conditions for GitHub Actions access. Defaults to allowing access from main branch and pull requests."
+  type        = list(string)
+  default = [
+    "assertion.ref == 'refs/heads/main'",
+    "assertion.ref_type == 'branch'",
+    "'pull_request' in assertion.event_name"
+  ]
+}
+

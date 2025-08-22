@@ -8,6 +8,7 @@ An opinionated wrapper around the [terraform-google-modules/terraform-google-pro
 - **Opinionated defaults**: Pre-configured with APIs and settings commonly needed by OpenJustice OK
 - **Service account management**: Automatic creation of a general-purpose service account with configurable roles
 - **OpenTofu backend support**: Optional setup of GCS bucket and dedicated service account for OpenTofu state management
+- **Workload Identity Federation**: Optional WIF setup for GitHub Actions to securely access GCP resources
 - **Security best practices**: Removes default service account, disables auto-network creation
 
 ## Key Differences from Upstream
@@ -18,6 +19,7 @@ This module wraps the upstream terraform-google-modules project factory with the
 - **Default service account removed**: Better security posture by removing the overprivileged default SA
 - **Opinionated API list**: Includes commonly needed APIs for our infrastructure use cases
 - **OpenTofu-specific features**: Built-in support for OpenTofu state backend setup
+- **WIF integration**: Built-in Workload Identity Federation setup for GitHub Actions
 - **Simplified interface**: Exposes commonly-used variables while maintaining flexibility
 
 ## Usage
@@ -69,6 +71,36 @@ module "project_factory" {
 }
 ```
 
+### With GitHub Actions Integration (WIF)
+
+```hcl
+module "project_factory" {
+  source = "../../../modules/gcp/project-factory"
+
+  project_id      = "my-project-12345"
+  billing_account = "012345-6789AB-CDEF01"
+  folder_id       = "folders/123456789012"
+  
+  service_account_id = "my-app-sa"
+  
+  # Enable OpenTofu backend resources
+  enable_tofu_backend_setup     = true
+  tofu_state_bucket_location    = "US-CENTRAL1"
+  tofu_provisioner_sa_project_roles = ["roles/owner"]
+  
+  # Enable WIF for GitHub Actions
+  enable_wif        = true
+  github_repository = "myorg/my-project-repo"
+  wif_pool_id       = "github-actions-pool"
+  wif_provider_id   = "github-provider"
+  
+  labels = {
+    environment = "production"
+    team        = "infrastructure"
+  }
+}
+```
+
 ## Inputs
 
 | Name | Description | Type | Default | Required |
@@ -86,6 +118,11 @@ module "project_factory" {
 | `tofu_state_bucket_name_suffix` | Suffix for the OpenTofu state bucket name | `string` | `"tfstate"` | no |
 | `tofu_state_bucket_location` | Location for the OpenTofu state GCS bucket | `string` | `"US-CENTRAL1"` | no |
 | `tofu_provisioner_sa_project_roles` | Project-level IAM roles for the OpenTofu provisioner SA | `list(string)` | `["roles/owner"]` | no |
+| `enable_wif` | If true, creates WIF resources for GitHub Actions integration | `bool` | `false` | no |
+| `github_repository` | GitHub repository (owner/repo) allowed to impersonate the SA via WIF | `string` | `null` | no |
+| `wif_pool_id` | ID for the Workload Identity Pool | `string` | `"github-actions-pool"` | no |
+| `wif_provider_id` | ID for the Workload Identity Provider | `string` | `"github-provider"` | no |
+| `github_actions_conditions` | Additional conditions for GitHub Actions access | `list(string)` | See variables.tf | no |
 
 ## Outputs
 
@@ -102,6 +139,10 @@ module "project_factory" {
 | `tofu_state_bucket_url` | The gsutil URL of the GCS bucket for OpenTofu state (if enabled) |
 | `tofu_provisioner_sa_email` | The email address of the OpenTofu provisioner service account (if enabled) |
 | `tofu_provisioner_sa_unique_id` | The unique ID of the OpenTofu provisioner service account (if enabled) |
+| `wif_pool_name` | The full name of the Workload Identity Pool (if WIF enabled) |
+| `wif_provider_name` | The full name of the Workload Identity Provider (if WIF enabled) |
+| `github_actions_sa_email` | The service account email for GitHub Actions to impersonate (if WIF enabled) |
+| `wif_audience` | The audience value to use in GitHub Actions for WIF authentication (if WIF enabled) |
 
 ## Default APIs
 
@@ -127,6 +168,62 @@ When `enable_tofu_backend_setup` is `true`, the module creates:
 3. **IAM Bindings**: Grants the provisioner SA appropriate permissions
 
 This setup follows best practices for OpenTofu state management in GCP.
+
+## Workload Identity Federation (WIF)
+
+When both `enable_tofu_backend_setup` and `enable_wif` are `true`, the module creates:
+
+1. **Workload Identity Pool**: Container for WIF providers
+2. **GitHub OIDC Provider**: Configures GitHub as a trusted identity provider
+3. **IAM Bindings**: Allows the specified GitHub repository to impersonate the Tofu provisioner service account
+
+This enables GitHub Actions to securely authenticate to GCP without storing service account keys.
+
+### GitHub Actions Configuration
+
+After enabling WIF, configure your GitHub Actions workflow like this:
+
+```yaml
+name: Terraform Plan/Apply
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER_NAME }}  # From module output
+          service_account: ${{ vars.SERVICE_ACCOUNT_EMAIL }}         # From module output
+          
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        
+      - name: Terraform Plan
+        if: github.event_name == 'pull_request'
+        run: terraform plan
+        
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve
+```
+
+Configure the following repository variables in GitHub:
+- `WIF_PROVIDER_NAME`: Value from the `wif_provider_name` output
+- `SERVICE_ACCOUNT_EMAIL`: Value from the `github_actions_sa_email` output
 
 ## Requirements
 

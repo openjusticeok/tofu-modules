@@ -48,6 +48,12 @@ module "project_factory" {
   tofu_provisioner_sa_project_roles = [
     "roles/owner"
   ]
+
+  # Optional: Enable WIF for GitHub Actions integration
+  enable_wif        = true
+  github_repository = "openjusticeok/example-project"  # Replace with your GitHub repo
+  wif_pool_id       = "github-actions-pool"
+  wif_provider_id   = "github-provider"
 }
 
 # Example outputs to show what's available
@@ -69,6 +75,21 @@ output "service_account_email" {
 output "tofu_state_bucket" {
   description = "The GCS bucket for OpenTofu state (if enabled)"
   value       = module.project_factory.tofu_state_bucket_name
+}
+
+output "tofu_provisioner_sa_email" {
+  description = "The Tofu provisioner service account email (if enabled)"
+  value       = module.project_factory.tofu_provisioner_sa_email
+}
+
+output "wif_audience" {
+  description = "The WIF audience for GitHub Actions (if enabled)"
+  value       = module.project_factory.wif_audience
+}
+
+output "github_actions_sa_email" {
+  description = "The service account email for GitHub Actions to impersonate (if WIF enabled)"
+  value       = module.project_factory.github_actions_sa_email
 }
 
 output "enabled_apis" {

@@ -132,3 +132,63 @@ resource "google_storage_bucket_iam_member" "tofu_provisioner_sa_state_bucket_ac
 #   ]
 # }
 
+# --- Workload Identity Federation (WIF) Resources ---
+
+# Workload Identity Pool for GitHub Actions
+resource "google_iam_workload_identity_pool" "github_pool" {
+  count = var.enable_tofu_backend_setup && var.enable_wif ? 1 : 0
+
+  project                   = module.project_factory.project_id
+  workload_identity_pool_id = var.wif_pool_id
+  display_name              = "GitHub Actions Pool"
+  description               = "Workload Identity Pool for GitHub Actions to access ${module.project_factory.project_id}"
+
+  depends_on = [module.project_factory]
+}
+
+# Workload Identity Provider for GitHub
+resource "google_iam_workload_identity_pool_provider" "github_provider" {
+  count = var.enable_tofu_backend_setup && var.enable_wif ? 1 : 0
+
+  project                            = module.project_factory.project_id
+  workload_identity_pool_id          = google_iam_workload_identity_pool.github_pool[0].workload_identity_pool_id
+  workload_identity_pool_provider_id = var.wif_provider_id
+  display_name                       = "GitHub Provider"
+  description                        = "GitHub OIDC provider for ${var.github_repository}"
+
+  oidc {
+    issuer_uri = "https://token.actions.githubusercontent.com"
+  }
+
+  attribute_mapping = {
+    "google.subject"       = "assertion.sub"
+    "attribute.actor"      = "assertion.actor"
+    "attribute.repository" = "assertion.repository"
+    "attribute.ref"        = "assertion.ref"
+    "attribute.ref_type"   = "assertion.ref_type"
+    "attribute.event_name" = "assertion.event_name"
+  }
+
+  # Condition to restrict access to the specific GitHub repository
+  attribute_condition = "assertion.repository == '${var.github_repository}' && (${join(" || ", var.github_actions_conditions)})"
+
+  depends_on = [google_iam_workload_identity_pool.github_pool]
+}
+
+# IAM binding to allow GitHub Actions to impersonate the Tofu provisioner service account
+resource "google_service_account_iam_binding" "github_wif_binding" {
+  count = var.enable_tofu_backend_setup && var.enable_wif ? 1 : 0
+
+  service_account_id = google_service_account.tofu_provisioner_sa[0].name
+  role               = "roles/iam.workloadIdentityUser"
+
+  members = [
+    "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_pool[0].name}/attribute.repository/${var.github_repository}"
+  ]
+
+  depends_on = [
+    google_iam_workload_identity_pool_provider.github_provider,
+    google_service_account.tofu_provisioner_sa
+  ]
+}
+
