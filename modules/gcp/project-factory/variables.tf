@@ -58,18 +58,6 @@ variable "service_account_id" {
   type        = string
 }
 
-variable "service_account_display_name" {
-  description = "The display name for the general-purpose service account."
-  type        = string
-  default     = null # If null, will default to a generated name or service_account_id
-}
-
-variable "service_account_description" {
-  description = "A description for the general-purpose service account."
-  type        = string
-  default     = "General purpose service account managed by OpenTofu."
-}
-
 variable "service_account_project_roles" {
   description = "A list of project-level IAM roles to grant to the general-purpose service account (e.g., ['roles/viewer', 'roles/storage.objectAdmin'])."
   type        = list(string)

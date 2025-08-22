@@ -2,37 +2,37 @@
 
 output "project_id" {
   description = "The ID of the created GCP project."
-  value       = google_project.new_project.project_id
+  value       = module.project_factory.project_id
 }
 
 output "project_number" {
   description = "The number of the created GCP project."
-  value       = google_project.new_project.number
+  value       = module.project_factory.project_number
 }
 
 output "project_name" {
   description = "The name of the created GCP project."
-  value       = google_project.new_project.name
+  value       = module.project_factory.project_name
 }
 
 output "generic_service_account_email" {
   description = "The email address of the created general-purpose service account."
-  value       = google_service_account.generic_sa.email
+  value       = module.project_factory.service_account_email
 }
 
 output "generic_service_account_unique_id" {
   description = "The unique ID of the created general-purpose service account."
-  value       = google_service_account.generic_sa.unique_id
+  value       = module.project_factory.service_account_unique_id
 }
 
 output "generic_service_account_name" {
   description = "The full name of the created general-purpose service account."
-  value       = google_service_account.generic_sa.name
+  value       = module.project_factory.service_account_name
 }
 
 output "enabled_apis" {
   description = "List of APIs enabled on the project."
-  value       = [for s in google_project_service.activated_apis : s.service]
+  value       = module.project_factory.enabled_apis
 }
 
 # --- Tofu Backend Outputs ---

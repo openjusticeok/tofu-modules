@@ -1,52 +1,36 @@
-# Resource to create the GCP Project
-resource "google_project" "new_project" {
-  project_id      = var.project_id
-  name            = var.project_name == null ? var.project_id : var.project_name
-  billing_account = var.billing_account
-  folder_id       = var.folder_id
-  org_id          = var.org_id # Only specify if folder_id is null and project is directly under an org
-  labels          = var.labels
-  deletion_policy = "DELETE"
+# Opinionated wrapper around the terraform-google-modules project factory
+# This provides sensible defaults for OpenJustice OK while leveraging the upstream module
+module "project_factory" {
+  source  = "terraform-google-modules/project-factory/google"
+  version = "~> 15.0"
+
+  # Core project configuration
+  name              = var.project_name == null ? var.project_id : var.project_name
+  project_id        = var.project_id
+  billing_account   = var.billing_account
+  folder_id         = var.folder_id
+  org_id            = var.org_id
+  labels            = var.labels
+
+  # API configuration with opinionated defaults
+  activate_apis                   = var.activate_apis
+  disable_dependent_services      = var.disable_dependent_services
+  disable_services_on_destroy     = true
+
+  # Service account configuration - use the upstream module's SA creation
+  create_project_sa               = true
+  project_sa_name                 = var.service_account_id
+  sa_role                         = var.service_account_project_roles
+
+  # Opinionated defaults for OpenJustice OK
+  auto_create_network             = false  # We prefer explicit network creation
+  default_service_account         = "delete"  # Remove default SA for better security
+  deletion_policy                 = "DELETE"  # Allow project deletion
 }
 
-# Resource to enable specified APIs on the new project
-# Waits for the project to be created before attempting to enable APIs
-resource "google_project_service" "activated_apis" {
-  for_each = toset(var.activate_apis)
 
-  project                    = google_project.new_project.project_id
-  service                    = each.key
-  disable_dependent_services = var.disable_dependent_services
-  disable_on_destroy         = true
 
-  # Explicit dependency to ensure project creation is complete
-  # and billing is properly associated before enabling APIs.
-  depends_on = [google_project.new_project]
-}
 
-# Resource to create a new general-purpose Service Account within the project
-# Waits for APIs (especially IAM API) to be enabled
-resource "google_service_account" "generic_sa" {
-  project      = google_project.new_project.project_id
-  account_id   = var.service_account_id
-  display_name = var.service_account_display_name == null ? "Service Account ${var.service_account_id}" : var.service_account_display_name
-  description  = var.service_account_description
-
-  # Explicit dependency on API activation, particularly 'iam.googleapis.com'
-  depends_on = [google_project_service.activated_apis["iam.googleapis.com"]] # Be specific if possible
-}
-
-# Resource to grant IAM roles to the general-purpose Service Account on the project level
-# Waits for the service account to be created
-resource "google_project_iam_member" "generic_sa_project_roles" {
-  for_each = toset(var.service_account_project_roles)
-
-  project = google_project.new_project.project_id
-  role    = each.key
-  member  = "serviceAccount:${google_service_account.generic_sa.email}"
-
-  depends_on = [google_service_account.generic_sa]
-}
 
 # --- Tofu Backend Setup Resources (Conditional) ---
 
@@ -54,8 +38,8 @@ resource "google_project_iam_member" "generic_sa_project_roles" {
 resource "google_storage_bucket" "tofu_state_bucket" {
   count = var.enable_tofu_backend_setup ? 1 : 0
 
-  name                        = "${google_project.new_project.project_id}-${var.tofu_state_bucket_name_suffix}"
-  project                     = google_project.new_project.project_id
+  name                        = "${module.project_factory.project_id}-${var.tofu_state_bucket_name_suffix}"
+  project                     = module.project_factory.project_id
   location                    = var.tofu_state_bucket_location
   storage_class               = var.tofu_state_bucket_storage_class
   force_destroy               = var.tofu_state_bucket_force_destroy
@@ -89,29 +73,26 @@ resource "google_storage_bucket" "tofu_state_bucket" {
     { "purpose" = "tofu-state-backend" }
   )
 
-  depends_on = [
-    google_project_service.activated_apis["storage.googleapis.com"], // Ensure Storage API is active
-    google_project.new_project
-  ]
+  depends_on = [module.project_factory]
 }
 
 # Service Account for Tofu to use for provisioning
 resource "google_service_account" "tofu_provisioner_sa" {
   count = var.enable_tofu_backend_setup ? 1 : 0
 
-  project      = google_project.new_project.project_id
+  project      = module.project_factory.project_id
   account_id   = var.tofu_provisioner_sa_id
   display_name = var.tofu_provisioner_sa_display_name
-  description  = "Service account for OpenTofu to manage resources in project ${google_project.new_project.project_id}"
+  description  = "Service account for OpenTofu to manage resources in project ${module.project_factory.project_id}"
 
-  depends_on = [google_project_service.activated_apis["iam.googleapis.com"]]
+  depends_on = [module.project_factory]
 }
 
 # Grant Tofu Provisioner SA roles on the project, making sure it is the ONLY owner. This removes ownership from the Tofu orchestrator that provisions our projects from the infrastructure repo.
 resource "google_project_iam_binding" "tofu_provisioner_sa_project_roles" {
   for_each = var.enable_tofu_backend_setup ? toset(var.tofu_provisioner_sa_project_roles) : toset([])
 
-  project = google_project.new_project.project_id
+  project = module.project_factory.project_id
   role = each.key
 
   members = [
