@@ -31,14 +31,14 @@ module "project_factory" {
   source = "../../../modules/gcp/project-factory"
 
   # Required
-  project_id      = "my-project-12345"
+  project_name    = "my-project"
   billing_account = "012345-6789AB-CDEF01"
   
   # Recommended
   folder_id       = "folders/123456789012"
   
   # Service Account
-  service_account_id = "my-app-sa"
+  user_service_account_id = "my-app-sa"
   
   labels = {
     environment = "production"
@@ -53,11 +53,11 @@ module "project_factory" {
 module "project_factory" {
   source = "../../../modules/gcp/project-factory"
 
-  project_id      = "my-project-12345"
+  project_name    = "my-project"
   billing_account = "012345-6789AB-CDEF01"
   folder_id       = "folders/123456789012"
   
-  service_account_id = "my-app-sa"
+  user_service_account_id = "my-app-sa"
   
   # Enable OpenTofu backend resources
   enable_tofu_backend_setup     = true
@@ -77,11 +77,11 @@ module "project_factory" {
 module "project_factory" {
   source = "../../../modules/gcp/project-factory"
 
-  project_id      = "my-project-12345"
+  project_name    = "my-project"
   billing_account = "012345-6789AB-CDEF01"
   folder_id       = "folders/123456789012"
   
-  service_account_id = "my-app-sa"
+  user_service_account_id = "my-app-sa"
   
   # Enable OpenTofu backend resources
   enable_tofu_backend_setup     = true
@@ -105,15 +105,15 @@ module "project_factory" {
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| `project_id` | The desired ID for the new GCP project | `string` | n/a | yes |
+| `project_name` | The display name for the new GCP project. This will be used to create a unique project id unless specified. | `string` | n/a | yes |
+| `project_id` | Optional. Specify a custom project ID to override the generated one. If not set, an ID will be generated from the project_name. | `string` | `null` | no |
 | `billing_account` | The ID of the billing account to associate with the project | `string` | n/a | yes |
-| `project_name` | The display name for the new GCP project | `string` | `null` (uses project_id) | no |
 | `folder_id` | The ID of the folder to create the project in | `string` | `null` | no |
 | `org_id` | The ID of the organization to create the project in | `string` | `null` | no |
 | `labels` | A map of labels to apply to the project | `map(string)` | `{}` | no |
 | `activate_apis` | A list of APIs to enable on the project | `list(string)` | See variables.tf | no |
-| `service_account_id` | The desired ID for the general-purpose service account | `string` | n/a | yes |
-| `service_account_project_roles` | Project-level IAM roles to grant to the service account | `list(string)` | `["roles/viewer"]` | no |
+| `user_service_account_id` | The desired ID for the general-purpose service account | `string` | n/a | yes |
+| `user_service_account_project_roles` | Project-level IAM roles to grant to the service account | `list(string)` | `["roles/viewer"]` | no |
 | `enable_tofu_backend_setup` | If true, creates GCS bucket and provisioner SA for OpenTofu | `bool` | `false` | no |
 | `tofu_state_bucket_name_suffix` | Suffix for the OpenTofu state bucket name | `string` | `"tfstate"` | no |
 | `tofu_state_bucket_location` | Location for the OpenTofu state GCS bucket | `string` | `"US-CENTRAL1"` | no |
@@ -234,4 +234,4 @@ Configure the following repository variables in GitHub:
 
 ## Examples
 
-See the [example](../../../examples/gcp/project-factory-example/main.tf) for a complete usage demonstration.
+See the [example](../../examples/gcp/project-factory-example/main.tf) for a complete usage demonstration.

@@ -5,18 +5,18 @@ module "project_factory" {
   source = "../../../modules/gcp/project-factory"
 
   # Required variables
-  project_id       = "example-project-12345"
+  project_name     = "Example Project"
   billing_account  = "012345-6789AB-CDEF01"
   
+  # Optional: specify a custom project ID
+  # project_id       = "example-project-12345"
+
   # Optional: place project in a folder (recommended for organization)
   folder_id        = "folders/123456789012"
-  
-  # Optional: custom project name (defaults to project_id)
-  project_name     = "Example Project"
 
   # Service account configuration
-  service_account_id           = "example-sa"
-  service_account_project_roles = [
+  user_service_account_id = "example-sa"
+  user_service_account_project_roles = [
     "roles/viewer",
     "roles/storage.objectViewer"
   ]

@@ -160,11 +160,7 @@ resource "google_iam_workload_identity_pool_provider" "github_provider" {
 
   attribute_mapping = {
     "google.subject"       = "assertion.sub"
-    "attribute.actor"      = "assertion.actor"
     "attribute.repository" = "assertion.repository"
-    "attribute.ref"        = "assertion.ref"
-    "attribute.ref_type"   = "assertion.ref_type"
-    "attribute.event_name" = "assertion.event_name"
   }
 
   # Condition to restrict access to the specific GitHub repository
