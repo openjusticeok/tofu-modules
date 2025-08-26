@@ -4,8 +4,10 @@ module "project_factory" {
   source  = "terraform-google-modules/project-factory/google"
   version = "~> 15.0"
 
+  random_project_id = true
+  
   # Core project configuration
-  name              = var.project_name == null ? var.project_id : var.project_name
+  name              = var.project_name
   project_id        = var.project_id
   billing_account   = var.billing_account
   folder_id         = var.folder_id
@@ -19,18 +21,14 @@ module "project_factory" {
 
   # Service account configuration - use the upstream module's SA creation
   create_project_sa               = true
-  project_sa_name                 = var.service_account_id
-  sa_role                         = var.service_account_project_roles
+  project_sa_name                 = var.user_service_account_id
+  sa_role                         = var.user_service_account_project_roles
 
   # Opinionated defaults for OpenJustice OK
   auto_create_network             = false  # We prefer explicit network creation
   default_service_account         = "delete"  # Remove default SA for better security
   deletion_policy                 = "DELETE"  # Allow project deletion
 }
-
-
-
-
 
 # --- Tofu Backend Setup Resources (Conditional) ---
 
@@ -59,6 +57,7 @@ resource "google_storage_bucket" "tofu_state_bucket" {
       age = 30 # Days after which noncurrent versions are deleted
     }
   }
+
   lifecycle_rule {
     action {
       type = "AbortIncompleteMultipartUpload"
@@ -116,21 +115,20 @@ resource "google_storage_bucket_iam_member" "tofu_provisioner_sa_state_bucket_ac
   ]
 }
 
-# Optional: Grant the initial generic SA (if different from provisioner) read access to state bucket
-# This might be useful if an analyst uses the generic_sa for read-only Tofu plans/show
-# resource "google_storage_bucket_iam_member" "generic_sa_state_bucket_read_access" {
-#   count = var.enable_tofu_backend_setup && google_service_account.generic_sa.email != google_service_account.tofu_provisioner_sa[0].email ? 1 : 0
+# Grant the initial user SA (if different from provisioner) read access to state bucket
+resource "google_storage_bucket_iam_member" "user_sa_state_bucket_read_access" {
+  count = var.enable_tofu_backend_setup && module.project_factory.service_account_email != google_service_account.tofu_provisioner_sa[0].email ? 1 : 0
 
-#   bucket = google_storage_bucket.tofu_state_bucket[0].name
-#   role   = "roles/storage.objectViewer"
-#   member = "serviceAccount:${google_service_account.generic_sa.email}"
+  bucket = google_storage_bucket.tofu_state_bucket[0].name
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${module.project_factory.service_account_email}"
 
-#   depends_on = [
-#     google_storage_bucket.tofu_state_bucket,
-#     google_service_account.generic_sa,
-#     google_service_account.tofu_provisioner_sa # Ensure provisioner SA is created first
-#   ]
-# }
+  depends_on = [
+    google_storage_bucket.tofu_state_bucket,
+    module.project_factory,
+    google_service_account.tofu_provisioner_sa # Ensure provisioner SA is created first
+  ]
+}
 
 # --- Workload Identity Federation (WIF) Resources ---
 

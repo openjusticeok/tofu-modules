@@ -1,18 +1,14 @@
 # variables.tf
 
-variable "project_id" {
-  description = "The desired ID for the new GCP project. Must be unique globally."
+variable "project_name" {
+  description = "The display name for the new GCP project. This will be used to create a unique project id unless specified."
   type        = string
-  validation {
-    condition     = length(var.project_id) >= 6 && length(var.project_id) <= 30 && can(regex("^[a-z][a-z0-9-]{4,28}[a-z0-9]$", var.project_id))
-    error_message = "Project ID must be 6 to 30 characters, start with a lowercase letter, and contain only lowercase letters, numbers, or hyphens."
-  }
 }
 
-variable "project_name" {
-  description = "The display name for the new GCP project."
+variable "project_id" {
+  description = "Optional. Specify a custom project ID to override the generated one. If not set, an ID will be generated from the project_name."
   type        = string
-  default     = null # If null, will default to project_id in the resource
+  default = null
 }
 
 variable "billing_account" {
@@ -53,12 +49,12 @@ variable "activate_apis" {
   ]
 }
 
-variable "service_account_id" {
+variable "user_service_account_id" {
   description = "The desired ID for the new general-purpose service account (e.g., 'my-app-sa'). This will be the part before '@'."
   type        = string
 }
 
-variable "service_account_project_roles" {
+variable "user_service_account_project_roles" {
   description = "A list of project-level IAM roles to grant to the general-purpose service account (e.g., ['roles/viewer', 'roles/storage.objectAdmin'])."
   type        = list(string)
   default     = ["roles/viewer"] # Opinionated default: start with viewer role
