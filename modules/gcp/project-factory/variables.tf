@@ -94,7 +94,7 @@ variable "tofu_state_bucket_storage_class" {
 variable "tofu_state_bucket_force_destroy" {
   description = "When deleting the Tofu state GCS bucket, this boolean option will delete all objects in the bucket. WARNING: Setting this to true will delete all Tofu state files irreversibly."
   type        = bool
-  default     = false # Safety default
+  default     = true
 }
 
 variable "tofu_provisioner_sa_id" {

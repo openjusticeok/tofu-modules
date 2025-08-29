@@ -35,7 +35,7 @@ module "project_factory" {
 resource "google_storage_bucket" "tofu_state_bucket" {
   count = var.enable_tofu_backend_setup ? 1 : 0
 
-  name                        = "${module.project_factory.project_id}-${var.tofu_state_bucket_name_suffix}"
+  name                        = "${module.project_factory.project_name}-${var.tofu_state_bucket_name_suffix}"
   project                     = module.project_factory.project_id
   location                    = var.tofu_state_bucket_location
   storage_class               = var.tofu_state_bucket_storage_class
