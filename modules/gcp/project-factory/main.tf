@@ -163,7 +163,7 @@ resource "google_iam_workload_identity_pool_provider" "github_provider" {
   }
 
   # Condition to restrict access to the specific GitHub repository
-  attribute_condition = "assertion.repository == '${var.github_repository}' && (${join(" || ", var.github_actions_conditions)})"
+  attribute_condition = "assertion.repository == '${var.github_repository}'"
 
   depends_on = [google_iam_workload_identity_pool.github_pool]
 }

@@ -144,12 +144,3 @@ variable "wif_provider_id" {
   default     = "github-provider"
 }
 
-variable "github_actions_conditions" {
-  description = "Additional conditions for GitHub Actions access. Defaults to allowing access from main branch and pull requests."
-  type        = list(string)
-  default = [
-    "assertion.ref == 'refs/heads/main'",
-    "'pull_request' in assertion.event_name"
-  ]
-}
-
