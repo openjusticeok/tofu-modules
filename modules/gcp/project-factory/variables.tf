@@ -1,18 +1,14 @@
 # variables.tf
 
-variable "project_id" {
-  description = "The desired ID for the new GCP project. Must be unique globally."
+variable "project_name" {
+  description = "The display name for the new GCP project. This will be used to create a unique project id unless specified."
   type        = string
-  validation {
-    condition     = length(var.project_id) >= 6 && length(var.project_id) <= 30 && can(regex("^[a-z][a-z0-9-]{4,28}[a-z0-9]$", var.project_id))
-    error_message = "Project ID must be 6 to 30 characters, start with a lowercase letter, and contain only lowercase letters, numbers, or hyphens."
-  }
 }
 
-variable "project_name" {
-  description = "The display name for the new GCP project."
+variable "project_id" {
+  description = "Optional. Specify a custom project ID to override the generated one. If not set, an ID will be generated from the project_name."
   type        = string
-  default     = null # If null, will default to project_id in the resource
+  default = null
 }
 
 variable "billing_account" {
@@ -53,27 +49,15 @@ variable "activate_apis" {
   ]
 }
 
-variable "service_account_id" {
+variable "user_service_account_id" {
   description = "The desired ID for the new general-purpose service account (e.g., 'my-app-sa'). This will be the part before '@'."
   type        = string
 }
 
-variable "service_account_display_name" {
-  description = "The display name for the general-purpose service account."
+variable "user_service_account_project_role" {
+  description = "A project-level IAM role to grant to the general-purpose service account (e.g., 'roles/viewer', 'roles/editor')."
   type        = string
-  default     = null # If null, will default to a generated name or service_account_id
-}
-
-variable "service_account_description" {
-  description = "A description for the general-purpose service account."
-  type        = string
-  default     = "General purpose service account managed by OpenTofu."
-}
-
-variable "service_account_project_roles" {
-  description = "A list of project-level IAM roles to grant to the general-purpose service account (e.g., ['roles/viewer', 'roles/storage.objectAdmin'])."
-  type        = list(string)
-  default     = ["roles/viewer"] # Opinionated default: start with viewer role
+  default     = "roles/viewer" # Opinionated default: start with viewer role
 }
 
 variable "disable_dependent_services" {
@@ -110,7 +94,7 @@ variable "tofu_state_bucket_storage_class" {
 variable "tofu_state_bucket_force_destroy" {
   description = "When deleting the Tofu state GCS bucket, this boolean option will delete all objects in the bucket. WARNING: Setting this to true will delete all Tofu state files irreversibly."
   type        = bool
-  default     = false # Safety default
+  default     = true
 }
 
 variable "tofu_provisioner_sa_id" {
@@ -129,5 +113,34 @@ variable "tofu_provisioner_sa_project_roles" {
   description = "A list of project-level IAM roles to grant to the Tofu provisioner service account."
   type        = list(string)
   default     = ["roles/owner"] # Opinionated default: owner for broad provisioning capabilities
+}
+
+# --- Variables for Workload Identity Federation (WIF) ---
+variable "enable_wif" {
+  description = "If true, creates Workload Identity Federation resources to allow GitHub Actions to impersonate the Tofu provisioner service account. Requires enable_tofu_backend_setup to be true."
+  type        = bool
+  default     = false
+}
+
+variable "github_repository" {
+  description = "The GitHub repository (in 'owner/repo' format) that should be allowed to impersonate the Tofu provisioner service account via WIF. Required if enable_wif is true."
+  type        = string
+  default     = null
+  validation {
+    condition = var.enable_wif == false || (var.github_repository != null && can(regex("^[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+$", var.github_repository)))
+    error_message = "GitHub repository must be in 'owner/repo' format when enable_wif is true."
+  }
+}
+
+variable "wif_pool_id" {
+  description = "The ID for the Workload Identity Pool. Defaults to 'github-actions-pool'."
+  type        = string
+  default     = "github-actions-pool"
+}
+
+variable "wif_provider_id" {
+  description = "The ID for the Workload Identity Provider within the pool. Defaults to 'github-provider'."
+  type        = string
+  default     = "github-provider"
 }
 

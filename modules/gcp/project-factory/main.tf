@@ -1,51 +1,32 @@
-# Resource to create the GCP Project
-resource "google_project" "new_project" {
-  project_id      = var.project_id
-  name            = var.project_name == null ? var.project_id : var.project_name
-  billing_account = var.billing_account
-  folder_id       = var.folder_id
-  org_id          = var.org_id # Only specify if folder_id is null and project is directly under an org
-  labels          = var.labels
-  deletion_policy = "DELETE"
-}
+# Opinionated wrapper around the terraform-google-modules project factory
+# This provides sensible defaults for OpenJustice OK while leveraging the upstream module
+module "project_factory" {
+  source  = "terraform-google-modules/project-factory/google"
+  version = "~> 18.0"
 
-# Resource to enable specified APIs on the new project
-# Waits for the project to be created before attempting to enable APIs
-resource "google_project_service" "activated_apis" {
-  for_each = toset(var.activate_apis)
+  random_project_id = true
+  
+  # Core project configuration
+  name              = var.project_name
+  billing_account   = var.billing_account
+  folder_id         = var.folder_id
+  org_id            = var.org_id
+  labels            = var.labels
 
-  project                    = google_project.new_project.project_id
-  service                    = each.key
-  disable_dependent_services = var.disable_dependent_services
-  disable_on_destroy         = true
+  # API configuration with opinionated defaults
+  activate_apis                   = var.activate_apis
+  disable_dependent_services      = var.disable_dependent_services
+  disable_services_on_destroy     = true
 
-  # Explicit dependency to ensure project creation is complete
-  # and billing is properly associated before enabling APIs.
-  depends_on = [google_project.new_project]
-}
+  # Service account configuration - use the upstream module's SA creation
+  create_project_sa               = true
+  project_sa_name                 = var.user_service_account_id
+  sa_role                         = var.user_service_account_project_role
 
-# Resource to create a new general-purpose Service Account within the project
-# Waits for APIs (especially IAM API) to be enabled
-resource "google_service_account" "generic_sa" {
-  project      = google_project.new_project.project_id
-  account_id   = var.service_account_id
-  display_name = var.service_account_display_name == null ? "Service Account ${var.service_account_id}" : var.service_account_display_name
-  description  = var.service_account_description
-
-  # Explicit dependency on API activation, particularly 'iam.googleapis.com'
-  depends_on = [google_project_service.activated_apis["iam.googleapis.com"]] # Be specific if possible
-}
-
-# Resource to grant IAM roles to the general-purpose Service Account on the project level
-# Waits for the service account to be created
-resource "google_project_iam_member" "generic_sa_project_roles" {
-  for_each = toset(var.service_account_project_roles)
-
-  project = google_project.new_project.project_id
-  role    = each.key
-  member  = "serviceAccount:${google_service_account.generic_sa.email}"
-
-  depends_on = [google_service_account.generic_sa]
+  # Opinionated defaults for OpenJustice OK
+  auto_create_network             = false  # We prefer explicit network creation
+  default_service_account         = "delete"  # Remove default SA for better security
+  deletion_policy                 = "DELETE"  # Allow project deletion
 }
 
 # --- Tofu Backend Setup Resources (Conditional) ---
@@ -54,8 +35,8 @@ resource "google_project_iam_member" "generic_sa_project_roles" {
 resource "google_storage_bucket" "tofu_state_bucket" {
   count = var.enable_tofu_backend_setup ? 1 : 0
 
-  name                        = "${google_project.new_project.project_id}-${var.tofu_state_bucket_name_suffix}"
-  project                     = google_project.new_project.project_id
+  name                        = "${module.project_factory.project_name}-${var.tofu_state_bucket_name_suffix}"
+  project                     = module.project_factory.project_id
   location                    = var.tofu_state_bucket_location
   storage_class               = var.tofu_state_bucket_storage_class
   force_destroy               = var.tofu_state_bucket_force_destroy
@@ -75,6 +56,7 @@ resource "google_storage_bucket" "tofu_state_bucket" {
       age = 30 # Days after which noncurrent versions are deleted
     }
   }
+
   lifecycle_rule {
     action {
       type = "AbortIncompleteMultipartUpload"
@@ -89,29 +71,26 @@ resource "google_storage_bucket" "tofu_state_bucket" {
     { "purpose" = "tofu-state-backend" }
   )
 
-  depends_on = [
-    google_project_service.activated_apis["storage.googleapis.com"], // Ensure Storage API is active
-    google_project.new_project
-  ]
+  depends_on = [module.project_factory]
 }
 
 # Service Account for Tofu to use for provisioning
 resource "google_service_account" "tofu_provisioner_sa" {
   count = var.enable_tofu_backend_setup ? 1 : 0
 
-  project      = google_project.new_project.project_id
+  project      = module.project_factory.project_id
   account_id   = var.tofu_provisioner_sa_id
   display_name = var.tofu_provisioner_sa_display_name
-  description  = "Service account for OpenTofu to manage resources in project ${google_project.new_project.project_id}"
+  description  = "Service account for OpenTofu to manage resources in project ${module.project_factory.project_id}"
 
-  depends_on = [google_project_service.activated_apis["iam.googleapis.com"]]
+  depends_on = [module.project_factory]
 }
 
 # Grant Tofu Provisioner SA roles on the project, making sure it is the ONLY owner. This removes ownership from the Tofu orchestrator that provisions our projects from the infrastructure repo.
 resource "google_project_iam_binding" "tofu_provisioner_sa_project_roles" {
   for_each = var.enable_tofu_backend_setup ? toset(var.tofu_provisioner_sa_project_roles) : toset([])
 
-  project = google_project.new_project.project_id
+  project = module.project_factory.project_id
   role = each.key
 
   members = [
@@ -135,19 +114,74 @@ resource "google_storage_bucket_iam_member" "tofu_provisioner_sa_state_bucket_ac
   ]
 }
 
-# Optional: Grant the initial generic SA (if different from provisioner) read access to state bucket
-# This might be useful if an analyst uses the generic_sa for read-only Tofu plans/show
-# resource "google_storage_bucket_iam_member" "generic_sa_state_bucket_read_access" {
-#   count = var.enable_tofu_backend_setup && google_service_account.generic_sa.email != google_service_account.tofu_provisioner_sa[0].email ? 1 : 0
+# Grant the initial user SA (if different from provisioner) read access to state bucket
+resource "google_storage_bucket_iam_member" "user_sa_state_bucket_read_access" {
+  count = var.enable_tofu_backend_setup && module.project_factory.service_account_email != google_service_account.tofu_provisioner_sa[0].email ? 1 : 0
 
-#   bucket = google_storage_bucket.tofu_state_bucket[0].name
-#   role   = "roles/storage.objectViewer"
-#   member = "serviceAccount:${google_service_account.generic_sa.email}"
+  bucket = google_storage_bucket.tofu_state_bucket[0].name
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${module.project_factory.service_account_email}"
 
-#   depends_on = [
-#     google_storage_bucket.tofu_state_bucket,
-#     google_service_account.generic_sa,
-#     google_service_account.tofu_provisioner_sa # Ensure provisioner SA is created first
-#   ]
-# }
+  depends_on = [
+    google_storage_bucket.tofu_state_bucket,
+    module.project_factory,
+    google_service_account.tofu_provisioner_sa # Ensure provisioner SA is created first
+  ]
+}
+
+# --- Workload Identity Federation (WIF) Resources ---
+
+# Workload Identity Pool for GitHub Actions
+resource "google_iam_workload_identity_pool" "github_pool" {
+  count = var.enable_tofu_backend_setup && var.enable_wif ? 1 : 0
+
+  project                   = module.project_factory.project_id
+  workload_identity_pool_id = var.wif_pool_id
+  display_name              = "GitHub Actions Pool"
+  description               = "Workload Identity Pool for GitHub Actions to access ${module.project_factory.project_id}"
+
+  depends_on = [module.project_factory]
+}
+
+# Workload Identity Provider for GitHub
+resource "google_iam_workload_identity_pool_provider" "github_provider" {
+  count = var.enable_tofu_backend_setup && var.enable_wif ? 1 : 0
+
+  project                            = module.project_factory.project_id
+  workload_identity_pool_id          = google_iam_workload_identity_pool.github_pool[0].workload_identity_pool_id
+  workload_identity_pool_provider_id = var.wif_provider_id
+  display_name                       = "GitHub Provider"
+  description                        = "GitHub OIDC provider for ${var.github_repository}"
+
+  oidc {
+    issuer_uri = "https://token.actions.githubusercontent.com"
+  }
+
+  attribute_mapping = {
+    "google.subject"       = "assertion.sub"
+    "attribute.repository" = "assertion.repository"
+  }
+
+  # Condition to restrict access to the specific GitHub repository
+  attribute_condition = "assertion.repository == '${var.github_repository}'"
+
+  depends_on = [google_iam_workload_identity_pool.github_pool]
+}
+
+# IAM binding to allow GitHub Actions to impersonate the Tofu provisioner service account
+resource "google_service_account_iam_binding" "github_wif_binding" {
+  count = var.enable_tofu_backend_setup && var.enable_wif ? 1 : 0
+
+  service_account_id = google_service_account.tofu_provisioner_sa[0].name
+  role               = "roles/iam.workloadIdentityUser"
+
+  members = [
+    "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_pool[0].name}/attribute.repository/${var.github_repository}"
+  ]
+
+  depends_on = [
+    google_iam_workload_identity_pool_provider.github_provider,
+    google_service_account.tofu_provisioner_sa
+  ]
+}
 
