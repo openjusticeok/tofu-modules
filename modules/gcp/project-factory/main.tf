@@ -2,7 +2,7 @@
 # This provides sensible defaults for OpenJustice OK while leveraging the upstream module
 module "project_factory" {
   source  = "terraform-google-modules/project-factory/google"
-  version = "~> 15.0"
+  version = "~> 18.0"
 
   random_project_id = true
   
