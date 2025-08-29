@@ -39,6 +39,7 @@ module "project_factory" {
   
   # Service Account
   user_service_account_id = "my-app-sa"
+  user_service_account_project_role = "roles/editor" # Example role
   
   labels = {
     environment = "production"
@@ -112,17 +113,16 @@ module "project_factory" {
 | `org_id` | The ID of the organization to create the project in | `string` | `null` | no |
 | `labels` | A map of labels to apply to the project | `map(string)` | `{}` | no |
 | `activate_apis` | A list of APIs to enable on the project | `list(string)` | See variables.tf | no |
-| `user_service_account_id` | The desired ID for the general-purpose service account | `string` | n/a | yes |
-| `user_service_account_project_roles` | Project-level IAM roles to grant to the service account | `list(string)` | `["roles/viewer"]` | no |
-| `enable_tofu_backend_setup` | If true, creates GCS bucket and provisioner SA for OpenTofu | `bool` | `false` | no |
-| `tofu_state_bucket_name_suffix` | Suffix for the OpenTofu state bucket name | `string` | `"tfstate"` | no |
-| `tofu_state_bucket_location` | Location for the OpenTofu state GCS bucket | `string` | `"US-CENTRAL1"` | no |
-| `tofu_provisioner_sa_project_roles` | Project-level IAM roles for the OpenTofu provisioner SA | `list(string)` | `["roles/owner"]` | no |
-| `enable_wif` | If true, creates WIF resources for GitHub Actions integration | `bool` | `false` | no |
-| `github_repository` | GitHub repository (owner/repo) allowed to impersonate the SA via WIF | `string` | `null` | no |
-| `wif_pool_id` | ID for the Workload Identity Pool | `string` | `"github-actions-pool"` | no |
-| `wif_provider_id` | ID for the Workload Identity Provider | `string` | `"github-provider"` | no |
-| `github_actions_conditions` | Additional conditions for GitHub Actions access | `list(string)` | See variables.tf | no |
+| `user_service_account_id` | The desired ID for the new general-purpose service account (e.g., 'my-app-sa'). This will be the part before '@'. | `string` | n/a | yes |
+| `user_service_account_project_role` | A project-level IAM role to grant to the general-purpose service account (e.g., 'roles/viewer', 'roles/editor'). | `string` | `"roles/viewer"` | no |
+| `enable_tofu_backend_setup` | If true, creates a GCS bucket for Tofu state and a dedicated Tofu provisioner service account. | `bool` | `false` | no |
+| `tofu_state_bucket_name_suffix` | A suffix to append to the project ID to form the Tofu state bucket name. The final name will be '<project_id>-<suffix>-tfstate'. If empty, '-tfstate' will be used. | `string` | `"tfstate"` | no |
+| `tofu_state_bucket_location` | The location for the Tofu state GCS bucket (e.g., 'US-CENTRAL1'). | `string` | `"US-CENTRAL1"` | no |
+| `tofu_provisioner_sa_project_roles` | A list of project-level IAM roles to grant to the Tofu provisioner service account. **Warning:** This uses `google_project_iam_binding` and will overwrite any existing IAM bindings for the specified roles. | `list(string)` | `["roles/owner"]` | no |
+| `enable_wif` | If true, creates Workload Identity Federation resources to allow GitHub Actions to impersonate the Tofu provisioner service account. Requires `enable_tofu_backend_setup` to be true. | `bool` | `false` | no |
+| `github_repository` | The GitHub repository (in 'owner/repo' format) that should be allowed to impersonate the Tofu provisioner service account via WIF. Required if enable_wif is true. | `string` | `null` | no |
+| `wif_pool_id` | The ID for the Workload Identity Pool. | `string` | `"github-actions-pool"` | no |
+| `wif_provider_id` | The ID for the Workload Identity Provider within the pool. | `string` | `"github-provider"` | no |
 
 ## Outputs
 
@@ -169,6 +169,8 @@ When `enable_tofu_backend_setup` is `true`, the module creates:
 
 This setup follows best practices for OpenTofu state management in GCP.
 
+**Warning:** The `tofu_provisioner_sa_project_roles` variable uses `google_project_iam_binding`. This will overwrite any existing IAM bindings for the roles you specify. For example, if you use the default `["roles/owner"]`, the Tofu provisioner service account will become the *sole* owner of the project, removing any other owners.
+
 ## Workload Identity Federation (WIF)
 
 When both `enable_tofu_backend_setup` and `enable_wif` are `true`, the module creates:
@@ -178,6 +180,8 @@ When both `enable_tofu_backend_setup` and `enable_wif` are `true`, the module cr
 3. **IAM Bindings**: Allows the specified GitHub repository to impersonate the Tofu provisioner service account
 
 This enables GitHub Actions to securely authenticate to GCP without storing service account keys.
+
+**Note:** Access is restricted to the single repository specified in the `github_repository` variable.
 
 ### GitHub Actions Configuration
 

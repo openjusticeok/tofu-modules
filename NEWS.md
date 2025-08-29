@@ -1,5 +1,14 @@
 # News
 
+## v0.2.1 (2025-08-29)
+
+### Fixes
+- **project-factory**: Corrected the `user_service_account_project_role` variable in the documentation and example, which was previously listed as a list instead of a string.
+- **project-factory**: Removed the non-existent `github_actions_conditions` variable from the documentation.
+- **project-factory**: Added a warning to the documentation to clarify that the Tofu provisioner service account will become the sole project owner.
+- **project-factory**: Clarified the Workload Identity Federation (WIF) behavior in the documentation.
+- **project-factory**: Removed the unnecessary `github-actions-workflow.yml` from the example.
+
 ## v0.2.0 (2025-01-XX)
 
 ### Breaking Changes

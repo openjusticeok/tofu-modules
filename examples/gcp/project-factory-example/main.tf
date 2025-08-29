@@ -16,10 +16,7 @@ module "project_factory" {
 
   # Service account configuration
   user_service_account_id = "example-sa"
-  user_service_account_project_roles = [
-    "roles/viewer",
-    "roles/storage.objectViewer"
-  ]
+  user_service_account_project_role = "roles/viewer"
 
   # Labels for resource organization
   labels = {
