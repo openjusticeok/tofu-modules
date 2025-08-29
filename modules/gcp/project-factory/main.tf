@@ -22,7 +22,7 @@ module "project_factory" {
   # Service account configuration - use the upstream module's SA creation
   create_project_sa               = true
   project_sa_name                 = var.user_service_account_id
-  sa_role                         = var.user_service_account_project_roles
+  sa_role                         = var.user_service_account_project_role
 
   # Opinionated defaults for OpenJustice OK
   auto_create_network             = false  # We prefer explicit network creation

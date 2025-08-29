@@ -54,10 +54,10 @@ variable "user_service_account_id" {
   type        = string
 }
 
-variable "user_service_account_project_roles" {
-  description = "A list of project-level IAM roles to grant to the general-purpose service account (e.g., ['roles/viewer', 'roles/storage.objectAdmin'])."
-  type        = list(string)
-  default     = ["roles/viewer"] # Opinionated default: start with viewer role
+variable "user_service_account_project_role" {
+  description = "A project-level IAM role to grant to the general-purpose service account (e.g., 'roles/viewer', 'roles/editor')."
+  type        = string
+  default     = "roles/viewer" # Opinionated default: start with viewer role
 }
 
 variable "disable_dependent_services" {
