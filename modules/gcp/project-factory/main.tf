@@ -8,7 +8,7 @@ module "project_factory" {
   
   # Core project configuration
   name              = var.project_name
-  project_id        = var.project_id
+  project_id        = var.project_id == "" ? null : var.project_id
   billing_account   = var.billing_account
   folder_id         = var.folder_id
   org_id            = var.org_id
