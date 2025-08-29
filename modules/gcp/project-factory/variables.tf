@@ -149,7 +149,6 @@ variable "github_actions_conditions" {
   type        = list(string)
   default = [
     "assertion.ref == 'refs/heads/main'",
-    "assertion.ref_type == 'branch'",
     "'pull_request' in assertion.event_name"
   ]
 }
