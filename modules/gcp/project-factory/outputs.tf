@@ -56,6 +56,11 @@ output "tofu_provisioner_sa_unique_id" {
   value       = var.enable_tofu_backend_setup ? google_service_account.tofu_provisioner_sa[0].unique_id : null
 }
 
+output "tofu_planner_sa_email" {
+  description = "The email address of the Tofu planner service account. Only set if enable_tofu_backend_setup and enable_wif are true."
+  value       = var.enable_tofu_backend_setup && var.enable_wif ? google_service_account.tofu_planner_sa[0].email : null
+}
+
 # --- WIF Outputs ---
 output "wif_pool_name" {
   description = "The full name of the Workload Identity Pool. Only set if enable_wif is true."

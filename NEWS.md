@@ -1,3 +1,13 @@
+## v0.3.0 (2025-09-04)
+
+### New Features
+- **multi-env-project-factory**: Introduced a new module (`modules/gcp/multi-env-project-factory`) to create multi-environment GCP project setups. This module orchestrates the creation of a parent folder and multiple projects (e.g., dev, staging, prod) within it, leveraging the enhanced `project-factory`.
+- **project-factory**: Enhanced Workload Identity Federation (WIF) to support branch-based `plan` and `apply` roles.
+  - Now creates two distinct service accounts for Tofu: an "applier" (with `owner` role) and a "planner" (with `viewer` role).
+  - WIF bindings are now configured to allow specific Git branch patterns (e.g., `refs/heads/main`) to impersonate the applier SA, and other patterns (e.g., `refs/pull/*`) to impersonate the planner SA.
+  - Added `apply_branch_pattern` and `plan_branch_pattern` variables to control WIF behavior.
+  - Outputs now include the planner service account email.
+
 # News
 
 ## v0.2.0 (2025-08-29)

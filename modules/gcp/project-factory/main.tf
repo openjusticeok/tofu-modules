@@ -160,6 +160,7 @@ resource "google_iam_workload_identity_pool_provider" "github_provider" {
   attribute_mapping = {
     "google.subject"       = "assertion.sub"
     "attribute.repository" = "assertion.repository"
+    "attribute.ref"        = "assertion.ref"
   }
 
   # Condition to restrict access to the specific GitHub repository
@@ -168,20 +169,54 @@ resource "google_iam_workload_identity_pool_provider" "github_provider" {
   depends_on = [google_iam_workload_identity_pool.github_pool]
 }
 
-# IAM binding to allow GitHub Actions to impersonate the Tofu provisioner service account
-resource "google_service_account_iam_binding" "github_wif_binding" {
+# Service Account for Tofu to use for planning (read-only)
+resource "google_service_account" "tofu_planner_sa" {
+  count = var.enable_tofu_backend_setup && var.enable_wif ? 1 : 0
+
+  project      = module.project_factory.project_id
+  account_id   = "${var.tofu_provisioner_sa_id}-planner"
+  display_name = "${var.tofu_provisioner_sa_display_name} Planner"
+  description  = "Service account for OpenTofu to plan resources in project ${module.project_factory.project_id}"
+
+  depends_on = [module.project_factory]
+}
+
+# Grant Tofu Planner SA viewer role on the project
+resource "google_project_iam_member" "tofu_planner_sa_project_viewer_role" {
+  count = var.enable_tofu_backend_setup && var.enable_wif ? 1 : 0
+
+  project = module.project_factory.project_id
+  role    = "roles/viewer"
+  member  = "serviceAccount:${google_service_account.tofu_planner_sa[0].email}"
+
+  depends_on = [google_service_account.tofu_planner_sa]
+}
+
+# IAM binding to allow GitHub Actions from apply_branch_pattern to impersonate the Applier SA
+resource "google_service_account_iam_member" "github_wif_applier_binding" {
   count = var.enable_tofu_backend_setup && var.enable_wif ? 1 : 0
 
   service_account_id = google_service_account.tofu_provisioner_sa[0].name
   role               = "roles/iam.workloadIdentityUser"
-
-  members = [
-    "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_pool[0].name}/attribute.repository/${var.github_repository}"
-  ]
+  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_pool[0].name}/attribute.repository/${var.github_repository}/attribute.ref/${var.apply_branch_pattern}"
 
   depends_on = [
     google_iam_workload_identity_pool_provider.github_provider,
     google_service_account.tofu_provisioner_sa
+  ]
+}
+
+# IAM binding to allow GitHub Actions from plan_branch_pattern to impersonate the Planner SA
+resource "google_service_account_iam_member" "github_wif_planner_binding" {
+  count = var.enable_tofu_backend_setup && var.enable_wif ? 1 : 0
+
+  service_account_id = google_service_account.tofu_planner_sa[0].name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_pool[0].name}/attribute.repository/${var.github_repository}/attribute.ref/${var.plan_branch_pattern}"
+
+  depends_on = [
+    google_iam_workload_identity_pool_provider.github_provider,
+    google_service_account.tofu_planner_sa
   ]
 }
 
