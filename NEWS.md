@@ -1,5 +1,14 @@
 # News
 
+## v0.3.0 (2025-09-04)
+
+### New Features
+- **multi-env-project-factory**: Introduced a new module (`modules/gcp/multi-env-project-factory`) to create multi-environment GCP project setups. This module orchestrates the creation of a parent folder and multiple projects (e.g., dev, staging, prod) within it, leveraging the `project-factory` module.
+
+### Fixes
+- **project-factory**: Fixed an 'Invalid count argument' error in `project-factory` module's `main.tf` related to conditional IAM binding for the user service account.
+
+
 ## v0.2.0 (2025-08-29)
 
 ### Breaking Changes
@@ -21,9 +30,9 @@
 - **project-factory**: Clarified the Workload Identity Federation (WIF) behavior in the documentation.
 - **project-factory**: Removed the unnecessary `github-actions-workflow.yml` from the example.
 
+
 ## v0.1.0 (2025-08-05)
 
 ### Updates
 - Initial release of the `project-factory` module for Google Cloud Platform.
 - Adopted semantic versioning for better referencing of the modules.
-

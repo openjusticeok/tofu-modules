@@ -116,7 +116,7 @@ resource "google_storage_bucket_iam_member" "tofu_provisioner_sa_state_bucket_ac
 
 # Grant the initial user SA (if different from provisioner) read access to state bucket
 resource "google_storage_bucket_iam_member" "user_sa_state_bucket_read_access" {
-  count = var.enable_tofu_backend_setup && module.project_factory.service_account_email != google_service_account.tofu_provisioner_sa[0].email ? 1 : 0
+  count = var.enable_tofu_backend_setup ? 1 : 0
 
   bucket = google_storage_bucket.tofu_state_bucket[0].name
   role   = "roles/storage.objectViewer"
@@ -174,14 +174,12 @@ resource "google_service_account_iam_binding" "github_wif_binding" {
 
   service_account_id = google_service_account.tofu_provisioner_sa[0].name
   role               = "roles/iam.workloadIdentityUser"
-
-  members = [
+  members             = [
     "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_pool[0].name}/attribute.repository/${var.github_repository}"
   ]
-
+  
   depends_on = [
     google_iam_workload_identity_pool_provider.github_provider,
     google_service_account.tofu_provisioner_sa
   ]
 }
-
