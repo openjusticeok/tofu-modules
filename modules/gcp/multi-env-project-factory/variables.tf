@@ -28,10 +28,22 @@ variable "environments" {
   type = map(object({
     branch_name = string
   }))
-  description = "A map of environments to create, with their corresponding GitHub branch."
+  description = "A map of environments to create, with their corresponding GitHub branch for `apply` operations."
   default = {
     "dev"     = { branch_name = "dev" }
     "staging" = { branch_name = "staging" }
     "prod"    = { branch_name = "main" }
   }
+}
+
+variable "plan_branch_pattern" {
+  type        = string
+  description = "The Git branch pattern (e.g., `refs/pull/*`) that is allowed to impersonate the **planner** service account (for `terraform plan`) across all environments."
+  default     = "refs/pull/*"
+}
+
+variable "tofu_state_bucket_location" {
+  type        = string
+  description = "The location for the Tofu state GCS bucket for all projects (e.g., `US-CENTRAL1`)."
+  default     = "US-CENTRAL1"
 }
