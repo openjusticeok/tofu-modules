@@ -30,7 +30,7 @@ variable "environments" {
   description = "A map of environments to create, with their corresponding GitHub branch for `apply` operations."
   default = {
     "dev"     = { branch_name = "dev" }
-    "staging" = { branch_name = "staging" }
+    "stg" = { branch_name = "staging" }
     "prod"    = { branch_name = "main" }
   }
 }
