@@ -132,18 +132,6 @@ variable "github_repository" {
   }
 }
 
-variable "apply_branch_pattern" {
-  description = "The git branch pattern that is allowed to impersonate the Applier SA. E.g., 'refs/heads/main'."
-  type        = string
-  default     = "refs/heads/main"
-}
-
-variable "plan_branch_pattern" {
-  description = "The git branch pattern that is allowed to impersonate the Planner SA. E.g., 'refs/pull/*' for PRs."
-  type        = string
-  default     = "refs/pull/*"
-}
-
 variable "wif_pool_id" {
   description = "The ID for the Workload Identity Pool. Defaults to 'github-actions-pool'."
   type        = string

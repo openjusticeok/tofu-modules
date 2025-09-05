@@ -16,8 +16,7 @@ module "my_application_environments" {
   #   "qa"      = { branch_name = "qa" }
   # }
 
-  # Optional: Override default plan_branch_pattern (default is "refs/pull/*")
-  # plan_branch_pattern = "refs/heads/feature/*"
+  
 
   # Optional: Tofu state bucket location (default is "US-CENTRAL1")
   # tofu_state_bucket_location = "us-east1"

@@ -21,7 +21,6 @@ variable "billing_account" {
 variable "github_repo" {
   type        = string
   description = "The GitHub repository in 'owner/repo' format that will be granted access."
-  
 }
 
 variable "environments" {
@@ -36,14 +35,29 @@ variable "environments" {
   }
 }
 
-variable "plan_branch_pattern" {
-  type        = string
-  description = "The Git branch pattern (e.g., `refs/pull/*`) that is allowed to impersonate the **planner** service account (for `terraform plan`) across all environments."
-  default     = "refs/pull/*"
+variable "activate_apis" {
+  description = "A list of APIs to enable on the project."
+  type        = list(string)
+  default = [
+    "compute.googleapis.com",
+    "storage.googleapis.com", // Needed for GCS buckets
+    "iam.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
+    "serviceusage.googleapis.com",       // Essential for managing services
+    "iamcredentials.googleapis.com",     // For SA impersonation capabilities
+    "logging.googleapis.com",            // Cloud Logging API
+    "monitoring.googleapis.com",         // Cloud Monitoring API
+  ]
 }
 
-variable "tofu_state_bucket_location" {
+variable "user_service_account_project_role" {
+  description = "A project-level IAM role to grant to the general-purpose service account (e.g., 'roles/viewer', 'roles/editor')."
   type        = string
-  description = "The location for the Tofu state GCS bucket for all projects (e.g., `US-CENTRAL1`)."
-  default     = "US-CENTRAL1"
+  default     = "roles/viewer" # Opinionated default: start with viewer role
+}
+
+variable "labels" {
+  description = "A map of labels to apply to the project."
+  type        = map(string)
+  default     = {}
 }

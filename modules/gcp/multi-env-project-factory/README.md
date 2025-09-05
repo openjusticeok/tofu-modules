@@ -34,8 +34,7 @@ module "my_application_environments" {
   #   "qa"      = { branch_name = "qa" }
   # }
 
-  # Optional: Override default plan_branch_pattern (default is "refs/pull/*")
-  # plan_branch_pattern = "refs/heads/feature/*"
+  
 
   # Optional: Tofu state bucket location (default is "US-CENTRAL1")
   # tofu_state_bucket_location = "us-east1"
@@ -52,7 +51,7 @@ module "my_application_environments" {
 | `billing_account` | The ID of the billing account to link to the created projects. | `string` | n/a | yes |
 | `github_repo` | The GitHub repository in `owner/repo` format that will be granted access to the projects via WIF. | `string` | n/a | yes |
 | `environments` | A map of environments to create, with their corresponding GitHub branch for `apply` operations. | `map(object({ branch_name = string }))` | See variables.tf | no |
-| `plan_branch_pattern` | The Git branch pattern (e.g., `refs/pull/*`) that is allowed to impersonate the **planner** service account (for `tofu plan`) across all environments. | `string` | `"refs/pull/*"` | no |
+
 | `tofu_state_bucket_location` | The location for the Tofu state GCS bucket for all projects (e.g., `US-CENTRAL1`). | `string` | `"US-CENTRAL1"` | no |
 
 ## Outputs
@@ -66,13 +65,6 @@ module "my_application_environments" {
 
 ## CI/CD Integration
 
-This module sets up Workload Identity Federation for each created project, allowing your GitHub Actions workflows to securely authenticate and manage resources.
-
-Use the `applier_sa_emails` and `planner_sa_emails` outputs to configure your GitHub Actions workflows. For example, if you have `dev`, `staging`, and `prod` environments:
-
--   **`dev` environment**: Use `module.my_application_environments.applier_sa_emails["dev"]` for `apply` operations on the `dev` branch.
--   **`staging` environment**: Use `module.my_application_environments.applier_sa_emails["staging"]` for `apply` operations on the `staging` branch.
--   **`prod` environment**: Use `module.my_application_environments.applier_sa_emails["prod"]` for `apply` operations on the `main` branch.
--   **All environments**: Use `module.my_application_environments.planner_sa_emails["dev"]` (or any other environment's planner SA) for `plan` operations on PR branches.
+This module sets up Workload Identity Federation for each created project, allowing your GitHub Actions workflows to securely authenticate and manage resources. The module no longer takes `apply_branch_pattern` or `plan_branch_pattern` as inputs. Instead, you should implement branch-specific logic directly within your GitHub Actions workflows to control which branches can perform `plan` or `apply` operations.
 
 Refer to the `project-factory` module's documentation for detailed GitHub Actions workflow examples.

@@ -70,8 +70,7 @@ module "project_factory" {
   # Enable Enhanced WIF for GitHub Actions
   enable_wif             = true
   github_repository      = "myorg/my-project-repo"
-  apply_branch_pattern   = "refs/heads/main" # Only 'main' branch can apply
-  plan_branch_pattern    = "refs/pull/*"     # All PR branches can plan
+  
   wif_pool_id            = "github-actions-pool"
   wif_provider_id        = "github-provider"
   
@@ -100,8 +99,7 @@ module "project_factory" {
 | `tofu_provisioner_sa_project_roles` | A list of project-level IAM roles to grant to the Tofu **applier** service account. **Warning:** This uses `google_project_iam_binding` and will overwrite any existing IAM bindings for the specified roles. | `list(string)` | `["roles/owner"]` | no |
 | `enable_wif` | If true, creates Workload Identity Federation resources to allow GitHub Actions to impersonate the Tofu applier and planner service accounts. Requires `enable_tofu_backend_setup` to be true. | `bool` | `false` | no |
 | `github_repository` | The GitHub repository (in 'owner/repo' format) that should be allowed to impersonate the Tofu service accounts via WIF. Required if `enable_wif` is true. | `string` | `null` | no |
-| `apply_branch_pattern` | The Git branch pattern (e.g., `refs/heads/main`) that is allowed to impersonate the **applier** service account (for `tofu apply`). Required if `enable_wif` is true. | `string` | `"refs/heads/main"` | no |
-| `plan_branch_pattern` | The Git branch pattern (e.g., `refs/pull/*`) that is allowed to impersonate the **planner** service account (for `tofu plan`). Required if `enable_wif` is true. | `string` | `"refs/pull/*"` | no |
+
 | `wif_pool_id` | The ID for the Workload Identity Pool. | `string` | `"github-actions-pool"` | no |
 | `wif_provider_id` | The ID for the Workload Identity Provider within the pool. | `string` | `"github-provider"` | no |
 
@@ -123,6 +121,7 @@ module "project_factory" {
 | `tofu_planner_sa_email` | The email address of the OpenTofu **planner** service account (if enabled) |
 | `wif_pool_name` | The full name of the Workload Identity Pool (if WIF enabled) |
 | `wif_provider_name` | The full name of the Workload Identity Provider (if WIF enabled) |
+| `github_actions_sa_email` | The service account email for GitHub Actions to impersonate (if WIF enabled) |
 | `wif_audience` | The audience value to use in GitHub Actions for WIF authentication (if WIF enabled) |
 
 ## Default APIs
@@ -158,9 +157,9 @@ When both `enable_tofu_backend_setup` and `enable_wif` are `true`, the module cr
 
 1.  **Workload Identity Pool**: Container for WIF providers.
 2.  **GitHub OIDC Provider**: Configures GitHub as a trusted identity provider, capable of identifying the repository and Git branch/ref.
-3.  **IAM Bindings**: Configures two distinct sets of permissions for GitHub Actions based on the Git branch:
-    *   **Applier Role**: Allows the specified `apply_branch_pattern` (e.g., `refs/heads/main`) to impersonate the **applier** service account (which has `roles/owner` on the project). This is for `terraform apply` operations.
-    *   **Planner Role**: Allows the specified `plan_branch_pattern` (e.g., `refs/pull/*`) to impersonate the **planner** service account (which has `roles/viewer` on the project). This is for `terraform plan` operations.
+3.  **IAM Bindings**: Configures two distinct sets of permissions for GitHub Actions. The enforcement of branch-specific `plan` (read-only) and `apply` (full control) operations is now handled within your GitHub Actions workflows by checking the `github.ref` context.
+    *   **Applier Role**: Allows the GitHub Actions workflow to impersonate the **applier** service account (which has `roles/owner` on the project).
+    *   **Planner Role**: Allows the GitHub Actions workflow to impersonate the **planner** service account (which has `roles/viewer` on the project).
 
 This enables GitHub Actions to securely authenticate to GCP without storing service account keys, with fine-grained control over permissions based on the Git branch.
 
