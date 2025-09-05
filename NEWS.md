@@ -5,6 +5,9 @@
 ### New Features
 - **multi-env-project-factory**: Introduced a new module (`modules/gcp/multi-env-project-factory`) to create multi-environment GCP project setups. This module orchestrates the creation of a parent folder and multiple projects (e.g., dev, staging, prod) within it, leveraging the `project-factory` module.
 
+### Fixes
+- **project-factory**: Fixed an 'Invalid count argument' error in `project-factory` module's `main.tf` related to conditional IAM binding for the user service account.
+
 
 ## v0.2.0 (2025-08-29)
 
