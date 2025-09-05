@@ -1,6 +1,7 @@
 resource "google_folder" "environment_folder" {
   display_name = var.folder_display_name
   parent       = var.parent_id
+  deletion_protection = false
 }
 
 module "project" {
