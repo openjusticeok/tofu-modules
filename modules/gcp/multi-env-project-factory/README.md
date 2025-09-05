@@ -51,6 +51,9 @@ module "my_application_environments" {
 | `billing_account` | The ID of the billing account to link to the created projects. | `string` | n/a | yes |
 | `github_repo` | The GitHub repository in `owner/repo` format that will be granted access to the projects via WIF. | `string` | n/a | yes |
 | `environments` | A map of environments to create, with their corresponding GitHub branch for `apply` operations. | `map(object({ branch_name = string }))` | See variables.tf | no |
+| `activate_apis` | A list of APIs to enable on the project. | `list(string)` | See variables.tf | no |
+| `user_service_account_project_role` | A project-level IAM role to grant to the general-purpose service account (e.g., 'roles/viewer', 'roles/editor'). | `string` | `"roles/viewer"` | no |
+| `labels` | A map of labels to apply to the project. | `map(string)` | `{}` | no |
 
 | `tofu_state_bucket_location` | The location for the Tofu state GCS bucket for all projects (e.g., `US-CENTRAL1`). | `string` | `"US-CENTRAL1"` | no |
 
@@ -60,8 +63,8 @@ module "my_application_environments" {
 |------|-------------|
 | `folder_id` | The ID of the GCP folder created for the environments. |
 | `project_ids` | A map of project IDs created, keyed by environment name. |
-| `applier_sa_emails` | A map of applier service account emails, keyed by environment name. |
-| `planner_sa_emails` | A map of planner service account emails, keyed by environment name. |
+| `provisioner_sa_emails` | A map of provisioner service account emails, keyed by environment name. |
+
 
 ## CI/CD Integration
 
