@@ -193,7 +193,7 @@ resource "google_cloudbuildv2_repository" "project_repo_connection" {
   location          = "us-central1"
 
   parent_connection = "projects/okpolicy-core/locations/us-central1/connections/github-connection" 
-  remote_uri        = "https://github.com/${var.github_repository}" 
+  remote_uri        = "https://github.com/${var.github_repository}.git" 
 
   depends_on = [module.project_factory]
 }
