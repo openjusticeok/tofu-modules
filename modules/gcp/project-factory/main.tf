@@ -189,7 +189,6 @@ resource "google_cloudbuildv2_repository" "project_repo_connection" {
   # Only create this resource if a central connection is provided
   count = var.github_repository != null ? 1 : 0
 
-  project           = module.project_factory.project_id
   name              = var.project_name
   location          = "us-central1"
 
