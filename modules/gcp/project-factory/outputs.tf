@@ -76,3 +76,9 @@ output "wif_audience" {
   description = "The audience value to use in GitHub Actions for WIF authentication. Only set if enable_wif is true."
   value       = var.enable_tofu_backend_setup && var.enable_wif ? "//iam.googleapis.com/${google_iam_workload_identity_pool.github_pool[0].name}/providers/${var.wif_provider_id}" : null
 }
+
+# --- Cloud Build Outputs ---
+output "cloudbuild_repository_name" {
+  description = "The name of the Cloud Build repository connection (if created)."
+  value       = var.github_repository != null ? google_cloudbuildv2_repository.project_repo_connection[0].name : null
+}

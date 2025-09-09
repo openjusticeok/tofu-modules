@@ -183,3 +183,18 @@ resource "google_service_account_iam_binding" "github_wif_binding" {
     google_service_account.tofu_provisioner_sa
   ]
 }
+
+# Cloud Build Github Repository Connection
+resource "google_cloudbuildv2_repository" "project_repo_connection" {
+  # Only create this resource if a central connection is provided
+  count = var.github_repository != null ? 1 : 0
+
+  name              = var.project_name
+  location          = "us-central1"
+
+  parent_connection = "projects/okpolicy-core/locations/us-central1/connections/github-connection" 
+  remote_uri        = "https://github.com/${var.github_repository}.git" 
+
+  depends_on = [module.project_factory]
+}
+
