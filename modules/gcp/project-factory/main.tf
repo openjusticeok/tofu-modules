@@ -206,7 +206,5 @@ resource "google_cloudbuildv2_repository" "project_repo_connection" {
 
   parent_connection = google_cloudbuildv2_connection.github-connection.id
   remote_uri        = "https://github.com/${var.github_repository}.git" 
-
-  depends_on = [google_cloudbuildv2_connection.github-connection]
 }
 
