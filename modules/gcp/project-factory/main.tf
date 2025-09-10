@@ -189,6 +189,7 @@ resource "google_cloudbuildv2_connection" "github-connection" {
   count = var.github_repository != null ? 1 : 0
 
   name = "github-connection"
+  project = module.project_factory.project_id
   location = "us-central1"
 
   github_config {
@@ -202,6 +203,7 @@ resource "google_cloudbuildv2_repository" "project_repo_connection" {
   count = var.github_repository != null ? 1 : 0
 
   name              = var.project_name
+  project = module.project_factory.project_id
   location          = "us-central1"
 
   parent_connection = google_cloudbuildv2_connection.github-connection[1].id
