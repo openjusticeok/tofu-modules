@@ -40,6 +40,8 @@ variable "activate_apis" {
   default = [
     "compute.googleapis.com",
     "storage.googleapis.com", // Needed for GCS buckets
+    "cloudbuild.googleapis.com",
+    "secretmanager.googleapis.com",
     "iam.googleapis.com",
     "cloudresourcemanager.googleapis.com",
     "serviceusage.googleapis.com",       // Essential for managing services
