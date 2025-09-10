@@ -184,29 +184,3 @@ resource "google_service_account_iam_binding" "github_wif_binding" {
   ]
 }
 
-# Cloud Build Github Connection
-resource "google_cloudbuildv2_connection" "github-connection" {
-  count = var.github_repository != null ? 1 : 0
-
-  name = "github-connection"
-  project = module.project_factory.project_id
-  location = "us-central1"
-
-  github_config {
-    app_installation_id = 20892544
-  }
-}
-
-# Cloud Build Github Repository 
-resource "google_cloudbuildv2_repository" "project_repo_connection" {
-  # Only create this resource if a central connection is provided
-  count = var.github_repository != null ? 1 : 0
-
-  name              = var.project_name
-  project = module.project_factory.project_id
-  location          = "us-central1"
-
-  parent_connection = google_cloudbuildv2_connection.github-connection[0].id
-  remote_uri        = "https://github.com/${var.github_repository}.git"
-}
-
