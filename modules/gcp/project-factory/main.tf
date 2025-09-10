@@ -206,7 +206,7 @@ resource "google_cloudbuildv2_repository" "project_repo_connection" {
   project = module.project_factory.project_id
   location          = "us-central1"
 
-  parent_connection = google_cloudbuildv2_connection.github-connection[1].id
+  parent_connection = google_cloudbuildv2_connection.github-connection[0].id
   remote_uri        = "https://github.com/${var.github_repository}.git"
 }
 
