@@ -81,25 +81,6 @@ module "project_factory" {
 }
 ```
 
-### With Cloud Build Repository Connection
-
-This example demonstrates how to connect a GitHub repository to a Cloud Build connection.
-
-```hcl
-module "project_factory" {
-  source = "../../../modules/gcp/project-factory"
-
-  project_name    = "my-project"
-  billing_account = "012345-6789AB-CDEF01"
-  folder_id       = "folders/123456789012"
-
-  user_service_account_id = "my-app-sa"
-
-  # Connect a GitHub repository to Cloud Build
-  github_repository = "myorg/my-project-repo"
-}
-```
-
 ## Inputs
 
 | Name | Description | Type | Default | Required |
@@ -184,14 +165,6 @@ When both `enable_tofu_backend_setup` and `enable_wif` are `true`, the module cr
     *   **Applier Role**: Allows the GitHub Actions workflow to impersonate the **applier** service account (which has `roles/owner` on the project).
 
 This enables GitHub Actions to securely authenticate to GCP without storing service account keys, with fine-grained control over permissions based on the Git branch.
-
-### Cloud Build Integration
-
-This module can connect a GitHub repository to Google Cloud Build using a pre-existing Cloud Build connection. This is useful for setting up CI/CD pipelines.
-
-When you provide a `github_repository`, the module creates a `google_cloudbuildv2_repository` resource. This resource links your GitHub repository to a Cloud Build connection, allowing you to create triggers that build your code.
-
-**Note:** This module does not create the Cloud Build connection itself. You must provide the parent connection string to a connection that you have already created.
 
 ### GitHub Actions Configuration
 
