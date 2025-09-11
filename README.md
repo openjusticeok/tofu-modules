@@ -45,6 +45,40 @@ module "project_factory" {
 }
 ```
 
+### GCP Environment Factory
+
+This module simplifies the creation of multiple, isolated GCP environments (e.g., `dev`, `stg`, `prod`) within a dedicated folder. It uses the `project-factory` module to provision each environment's project, ensuring consistency and applying best practices.
+
+#### Features
+
+- **Multi-Environment Scaffolding**: Creates a specified list of environments, each in its own project.
+- **Folder Organization**: Groups all environment projects under a single, new GCP folder.
+- **Consistent Project Setup**: Leverages the `project-factory` to ensure each project has the same core configuration, including:
+    - Opinionated API enablement
+    - Secure service account management with Workload Identity Federation
+    - OpenTofu backend setup
+- **Customizable**: Allows for custom labels, APIs, and service account roles.
+
+#### Usage
+
+```hcl
+module "environment_factory" {
+  source = "github.com/openjusticeok/tofu-modules//modules/gcp/environment-factory"
+
+  project_name      = "my-app"
+  billing_account = "012345-6789AB-CDEF01"
+  parent_id       = "organizations/123456789012"
+  github_repository = "my-owner/my-repo"
+
+  environments = ["dev", "stg", "prod"]
+
+  labels = {
+    team = "my-team"
+  }
+}
+```
+
 ## Examples
 
-See the [project-factory example](examples/gcp/project-factory-example/main.tf) for a complete usage demonstration.
+- **Project Factory**: See the [project-factory example](examples/gcp/project-factory-example/main.tf) for a demonstration of creating a single, standalone project.
+- **Environment Factory**: See the [environment-factory example](examples/gcp/environment-factory-example/main.tf) for a demonstration of creating a multi-environment setup.

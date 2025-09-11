@@ -1,5 +1,16 @@
 # News
 
+## v0.5.0 (2025-09-11)
+
+### New Modules
+
+- **environment-factory**: Added a new module, `environment-factory`, to simplify the creation of multi-environment GCP setups. This module uses the `project-factory` to provision consistent, isolated projects for environments like `dev`, `stg`, and `prod`.
+
+### Documentation
+
+- Updated the top-level `README.md` to include information about the new `environment-factory` module.
+- Created a comprehensive `README.md` for the `environment-factory` module, including features, usage examples, and a full list of inputs and outputs.
+
 ## v0.4.0 (2025-09-09)
 
 ### Removals
