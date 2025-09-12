@@ -5,17 +5,17 @@ module "project_factory" {
   source = "../../../modules/gcp/project-factory"
 
   # Required variables
-  project_name     = "Example Project"
-  billing_account  = "012345-6789AB-CDEF01"
-  
+  project_name    = "Example Project"
+  billing_account = "012345-6789AB-CDEF01"
+
   # Optional: specify a custom project ID
   # project_id       = "example-project-12345"
 
   # Optional: place project in a folder (recommended for organization)
-  folder_id        = "folders/123456789012"
+  folder_id = "folders/123456789012"
 
   # Service account configuration
-  user_service_account_id = "example-sa"
+  user_service_account_id           = "example-sa"
   user_service_account_project_role = "roles/viewer"
 
   # Labels for resource organization
@@ -35,12 +35,12 @@ module "project_factory" {
     "iamcredentials.googleapis.com",
     "logging.googleapis.com",
     "monitoring.googleapis.com",
-    "bigquery.googleapis.com",        # Additional API for this project
-    "cloudbuild.googleapis.com",      # Additional API for this project
+    "bigquery.googleapis.com",   # Additional API for this project
+    "cloudbuild.googleapis.com", # Additional API for this project
   ]
 
   # Optional: Enable OpenTofu backend setup
-  enable_tofu_backend_setup = true
+  enable_tofu_backend_setup  = true
   tofu_state_bucket_location = "US-CENTRAL1"
   tofu_provisioner_sa_project_roles = [
     "roles/owner"
@@ -48,7 +48,7 @@ module "project_factory" {
 
   # Optional: Enable WIF for GitHub Actions integration
   enable_wif        = true
-  github_repository = "openjusticeok/example-project"  # Replace with your GitHub repo
+  github_repository = "openjusticeok/example-project" # Replace with your GitHub repo
   wif_pool_id       = "github-actions-pool"
   wif_provider_id   = "github-provider"
 }
