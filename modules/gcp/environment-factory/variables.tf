@@ -1,4 +1,4 @@
-variable "project_name" {
+variable "name" {
   description = "A name for all created project names and IDs. e.g., 'my-app' will create 'my-app-dev', 'my-app-staging', etc."
   type        = string
 }
@@ -13,7 +13,7 @@ variable "billing_account" {
   type        = string
 }
 
-variable "parent_id" {
+variable "parent" {
   description = "The ID of the parent resource (organization or folder) to create the new folder in. E.g., 'organizations/12345' or 'folders/67890'."
   type        = string
 }
@@ -54,8 +54,14 @@ variable "activate_apis" {
   ]
 }
 
-variable "user_service_account_project_role" {
-  description = "A project-level IAM role to grant to the general-purpose service account (e.g., 'roles/viewer', 'roles/editor')."
+variable "tofu_sa_name" {
+  description = "OpenTofu Provisioner service account name for the project."
   type        = string
-  default     = "roles/viewer"
+  default     = "tofu-provisioner"
+}
+
+variable "tofu_sa_role" {
+  description = "A role to give the OpenTofu Provisioner Service Account for the project (defaults to owner)"
+  type        = string
+  default     = "roles/owner"
 }

@@ -39,9 +39,9 @@ module "project_factory" {
   # Labels
   labels = var.labels
 
-  # State Bucket
-  bucket_project       = var.bucket_project != "" ? var.bucket_project : module.project_factory.project_id
-  bucket_name          = var.bucket_name != "" ? var.bucket_name : "${module.project_factory.project_name}-tfstate"
+  # Project Bucket
+  bucket_project       = var.bucket_project
+  bucket_name          = var.bucket_name
   bucket_location      = var.bucket_location
   bucket_versioning    = var.bucket_versioning
   bucket_labels        = var.bucket_labels
@@ -102,55 +102,61 @@ module "project_factory" {
   deletion_policy = var.deletion_policy
 }
 
+# Tofu State Bucket
+resource "google_storage_bucket" "tofu_state_bucket" {
+  name          = "${module.project_factory.project_name}-tfstate"
+  location      = "US"
+  force_destroy = true
+  project       = module.project_factory.project_id
+
+  versioning {
+    enabled = true
+  }
+
+  uniform_bucket_level_access = true
+}
+
 # Service Account for Tofu to use for provisioning
-resource "google_service_account" "tofu_provisioner_sa" {
-  project      = module.project_factory.project_id
-  account_id   = var.tofu_sa_name
-  description  = var.tofu_sa_description != null ? var.tofu_sa_description : "Service account for OpenTofu to manage resources in project ${module.project_factory.project_id}"
+resource "google_service_account" "tofu_sa" {
+  project     = module.project_factory.project_id
+  account_id  = var.tofu_sa_name
+  description = var.tofu_sa_description != null ? var.tofu_sa_description : "Service account for OpenTofu to manage resources in project ${module.project_factory.project_id}"
 
   depends_on = [module.project_factory]
 }
 
-# Grant Tofu Provisioner SA roles on the project, making sure it is the ONLY owner. This removes ownership from the Tofu orchestrator that provisions our projects from the infrastructure repo.
-resource "google_project_iam_binding" "tofu_provisioner_sa_project_roles" {
-  for_each = toset(var.tofu_provisioner_sa_project_roles)
-
+# Grant Tofu Provisioner SA roles on the project
+resource "google_project_iam_member" "tofu_sa_project_role" {
   project = module.project_factory.project_id
-  role    = each.key
+  role    = var.tofu_sa_role
 
-  members = [
-    "serviceAccount:${google_service_account.tofu_provisioner_sa[0].email}" # Access via index due to count
-  ]
+  member = "serviceAccount:${google_service_account.tofu_sa.email}"
 
-  depends_on = [google_service_account.tofu_provisioner_sa]
+  depends_on = [google_service_account.tofu_sa]
 }
 
 # Grant Tofu Provisioner SA access to the Tofu state bucket
-resource "google_storage_bucket_iam_member" "tofu_provisioner_sa_state_bucket_access" {
-  count = var.enable_tofu_backend_setup ? 1 : 0
-
-  bucket = google_storage_bucket.tofu_state_bucket[0].name                         # Access via index due to count
-  role   = "roles/storage.objectAdmin"                                             # Full control over objects in the bucket
-  member = "serviceAccount:${google_service_account.tofu_provisioner_sa[0].email}" # Access via index
+resource "google_storage_bucket_iam_member" "tofu_sa_state_bucket_access" {
+  bucket = google_storage_bucket.tofu_state_bucket.name
+  role   = "roles/storage.objectAdmin"                              # Full control over objects in the bucket
+  member = "serviceAccount:${google_service_account.tofu_sa.email}" # Access via index
 
   depends_on = [
     google_storage_bucket.tofu_state_bucket,
-    google_service_account.tofu_provisioner_sa
+    google_service_account.tofu_sa
   ]
 }
 
-# Grant the initial user SA (if different from provisioner) read access to state bucket
-resource "google_storage_bucket_iam_member" "user_sa_state_bucket_read_access" {
-  count = var.enable_tofu_backend_setup ? 1 : 0
-
-  bucket = google_storage_bucket.tofu_state_bucket[0].name
+# Grant the project SA read access to state bucket
+resource "google_storage_bucket_iam_member" "project_sa_state_bucket_read_access" {
+  bucket = google_storage_bucket.tofu_state_bucket.name
   role   = "roles/storage.objectViewer"
   member = "serviceAccount:${module.project_factory.service_account_email}"
 
   depends_on = [
     google_storage_bucket.tofu_state_bucket,
     module.project_factory,
-    google_service_account.tofu_provisioner_sa # Ensure provisioner SA is created first
+    google_service_account.tofu_sa # Ensure provisioner SA is created first
   ]
 }
 
@@ -158,7 +164,7 @@ resource "google_storage_bucket_iam_member" "user_sa_state_bucket_read_access" {
 
 # Workload Identity Pool for GitHub Actions
 resource "google_iam_workload_identity_pool" "github_pool" {
-  count = var.enable_tofu_backend_setup && var.enable_wif ? 1 : 0
+  count = var.enable_wif ? 1 : 0
 
   project                   = module.project_factory.project_id
   workload_identity_pool_id = var.wif_pool_id
@@ -170,7 +176,7 @@ resource "google_iam_workload_identity_pool" "github_pool" {
 
 # Workload Identity Provider for GitHub
 resource "google_iam_workload_identity_pool_provider" "github_provider" {
-  count = var.enable_tofu_backend_setup && var.enable_wif ? 1 : 0
+  count = var.enable_wif ? 1 : 0
 
   project                            = module.project_factory.project_id
   workload_identity_pool_id          = google_iam_workload_identity_pool.github_pool[0].workload_identity_pool_id
@@ -195,9 +201,9 @@ resource "google_iam_workload_identity_pool_provider" "github_provider" {
 
 # IAM binding to allow GitHub Actions to impersonate the Tofu provisioner service account
 resource "google_service_account_iam_binding" "github_wif_binding" {
-  count = var.enable_tofu_backend_setup && var.enable_wif ? 1 : 0
+  count = var.enable_wif ? 1 : 0
 
-  service_account_id = google_service_account.tofu_provisioner_sa[0].name
+  service_account_id = google_service_account.tofu_sa.name
   role               = "roles/iam.workloadIdentityUser"
   members = [
     "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_pool[0].name}/attribute.repository/${var.github_repository}"
@@ -205,7 +211,6 @@ resource "google_service_account_iam_binding" "github_wif_binding" {
 
   depends_on = [
     google_iam_workload_identity_pool_provider.github_provider,
-    google_service_account.tofu_provisioner_sa
+    google_service_account.tofu_sa
   ]
 }
-
