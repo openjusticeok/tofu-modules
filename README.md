@@ -12,17 +12,9 @@ An opinionated wrapper around the [terraform-google-modules/terraform-google-pro
 
 - **Opinionated Defaults**: Pre-configured with APIs and settings commonly needed by OpenJustice OK
 - **Service Account Management**: Automatic creation of a general-purpose service account with configurable roles
-- **OpenTofu Backend Support**: Optional setup of GCS bucket and dedicated service account for OpenTofu state management
+- **OpenTofu Backend Support**: Automatic setup of a GCS bucket for OpenTofu state management.
 - **Security Best Practices**: Removes default service account, disables auto-network creation
-- **Battle-Tested**: Built on the widely-used terraform-google-modules project factory
-- **Enhanced Workload Identity Federation**: Supports branch-based `plan` and `apply` roles for CI/CD.
-
-#### Key Differences from Upstream
-
-- **Auto-network creation disabled**: Encourages explicit network management
-- **Default service account removed**: Better security posture
-- **Opinionated API list**: Includes commonly needed APIs for our use cases
-- **OpenTofu-specific features**: Built-in support for OpenTofu state backend setup
+- **Workload Identity Federation**: Simplified setup for Workload Identity Federation to allow GitHub Actions to impersonate service accounts.
 
 #### Usage
 
@@ -30,18 +22,17 @@ An opinionated wrapper around the [terraform-google-modules/terraform-google-pro
 module "project_factory" {
   source = "github.com/openjusticeok/tofu-modules//modules/gcp/project-factory"
 
-  project_id      = "my-project-12345"
+  name            = "my-project"
   billing_account = "012345-6789AB-CDEF01"
   folder_id       = "folders/123456789012"
 
-  service_account_id = "my-app-sa"
-  
   labels = {
     environment = "production"
     team        = "infrastructure"
   }
 
-  enable_tofu_backend_setup = true
+  enable_wif        = true
+  github_repository = "my-owner/my-repo"
 }
 ```
 
@@ -65,10 +56,11 @@ This module simplifies the creation of multiple, isolated GCP environments (e.g.
 module "environment_factory" {
   source = "github.com/openjusticeok/tofu-modules//modules/gcp/environment-factory"
 
-  project_name      = "my-app"
-  billing_account = "012345-6789AB-CDEF01"
-  parent_id       = "organizations/123456789012"
-  github_repository = "my-owner/my-repo"
+  name                = "my-app"
+  billing_account     = "012345-6789AB-CDEF01"
+  parent              = "organizations/123456789012"
+  folder_display_name = "My Application Environments"
+  github_repository   = "my-owner/my-repo"
 
   environments = ["dev", "stg", "prod"]
 
