@@ -172,6 +172,13 @@ resource "google_iam_workload_identity_pool" "github_pool" {
   description               = "Workload Identity Pool for GitHub Actions to access ${module.project_factory.project_id}"
 
   depends_on = [module.project_factory]
+
+  lifecycle {
+    precondition {
+      condition     = var.github_repository != null
+      error_message = "var.github_repository must be set when var.enable_wif is true."
+    }
+  }
 }
 
 # Workload Identity Provider for GitHub

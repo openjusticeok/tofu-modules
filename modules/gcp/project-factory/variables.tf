@@ -30,8 +30,8 @@ variable "github_repository" {
   type        = string
   default     = null
   validation {
-    condition     = var.enable_wif == false || (var.github_repository != null && can(regex("^[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+$", var.github_repository)))
-    error_message = "GitHub repository must be in 'owner/repo' format when enable_wif is true."
+    condition     = var.github_repository == null || can(regex("^[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+$", var.github_repository))
+    error_message = "GitHub repository must be in 'owner/repo' format."
   }
 }
 
