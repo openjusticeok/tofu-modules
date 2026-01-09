@@ -7,43 +7,14 @@ on:
   pull_request:
 
 jobs:
-  fmt:
-    name: Check Formatting
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup OpenTofu
-        uses: opentofu/setup-opentofu@v1
-        with:
-          tofu_version: 1.8.1
-
-      - name: Tofu Format
-        run: tofu fmt -check -recursive
-
-  validate:
-    name: Validate
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        directory:
-          - modules/gcp/project-factory
-          - modules/gcp/environment-factory
-          - examples/gcp/project-factory-example
-          - examples/gcp/environment-factory-example
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup OpenTofu
-        uses: opentofu/setup-opentofu@v1
-        with:
-          tofu_version: 1.8.1
-
-      - name: Init
-        working-directory: ${{ matrix.directory }}
-        run: tofu init -backend=false
-
-      - name: Validate
-        working-directory: ${{ matrix.directory }}
-        run: tofu validate
+  ci:
+    uses: openjusticeok/actions/.github/workflows/tofu-ci.yml@main
+    with:
+      tofu_version: 1.8.1
+      directories: |
+        [
+          "modules/gcp/project-factory",
+          "modules/gcp/environment-factory",
+          "examples/gcp/project-factory-example",
+          "examples/gcp/environment-factory-example"
+        ]
