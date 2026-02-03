@@ -58,11 +58,11 @@ output "tofu_sa_unique_id" {
 
 # --- WIF Outputs (Hub & Spoke Model) ---
 # Note: WIF Pool and Provider are managed centrally in openjusticeok/infrastructure
-# This module only creates IAM bindings to the global provider
+# This module only creates IAM bindings to the global pool
 
-output "wif_provider_name" {
-  description = "The global WIF provider name passed to this module. Only set if enable_wif is true."
-  value       = var.enable_wif ? var.wif_provider_name : null
+output "wif_pool_name" {
+  description = "The global WIF pool name passed to this module. Only set if enable_wif is true."
+  value       = var.enable_wif ? var.wif_pool_name : null
 }
 
 output "github_actions_sa_email" {

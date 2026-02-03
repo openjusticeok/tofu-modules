@@ -15,9 +15,9 @@ module "project" {
   tofu_sa_name      = var.tofu_sa_name
   tofu_sa_role      = var.tofu_sa_role
 
-  # Hub & Spoke: Use global WIF provider instead of creating our own
-  enable_wif        = true
-  wif_provider_name = var.wif_provider_name
+  # Hub & Spoke: Use global WIF pool instead of creating our own
+  enable_wif    = true
+  wif_pool_name = var.wif_pool_name
 
   # Active APIs
   activate_apis = var.activate_apis

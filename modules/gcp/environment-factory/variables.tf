@@ -66,7 +66,7 @@ variable "tofu_sa_role" {
   default     = "roles/owner"
 }
 
-variable "wif_provider_name" {
-  description = "The full resource name of the global Workload Identity Provider from openjusticeok/infrastructure (e.g., 'projects/12345/locations/global/workloadIdentityPools/github-pool/providers/github-provider'). Passed to all environment projects."
+variable "wif_pool_name" {
+  description = "The full resource name of the global Workload Identity Pool from openjusticeok/infrastructure (e.g., 'projects/12345/locations/global/workloadIdentityPools/github-pool'). Passed to all environment projects."
   type        = string
 }

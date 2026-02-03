@@ -8,8 +8,8 @@ OpenTofu modules to provision opinionated infrastructure, including multi-enviro
 
 **Migration Required:**
 - Remove `wif_pool_id` and `wif_provider_id` variables (no longer used)
-- Add `wif_provider_name` variable with the full resource name from `openjusticeok/infrastructure`
-- Example: `wif_provider_name = "projects/12345/locations/global/workloadIdentityPools/github-pool/providers/github-provider"`
+- Add `wif_pool_name` variable with the full resource name from `openjusticeok/infrastructure`
+- Example: `wif_pool_name = "projects/12345/locations/global/workloadIdentityPools/github-pool"`
 
 See the [NEWS.md](NEWS.md) for full details.
 
@@ -25,13 +25,13 @@ An opinionated wrapper around the [terraform-google-modules/terraform-google-pro
 - **Service Account Management**: Automatic creation of a general-purpose service account with configurable roles
 - **OpenTofu Backend Support**: Automatic setup of a GCS bucket for OpenTofu state management.
 - **Security Best Practices**: Removes default service account, disables auto-network creation
-- **Workload Identity Federation**: Hub & Spoke model - consumes global WIF provider from `openjusticeok/infrastructure` and creates IAM bindings for GitHub Actions.
+- **Workload Identity Federation**: Hub & Spoke model - consumes global WIF pool from `openjusticeok/infrastructure` and creates IAM bindings for GitHub Actions.
 
 #### Hub & Spoke Architecture
 
 This module follows a "Hub & Spoke" identity model to avoid GCP quota limits and centralize security:
-- **Hub**: `openjusticeok/infrastructure` creates ONE global WIF provider for the entire organization
-- **Spoke**: Each `project-factory` instance creates IAM bindings to that global provider
+- **Hub**: `openjusticeok/infrastructure` creates ONE global WIF pool for the entire organization
+- **Spoke**: Each `project-factory` instance creates IAM bindings to that global pool
 - **Benefit**: Avoids hitting the 10 pool-per-project quota and centralizes security policy
 
 #### Usage (v0.6.0+)
@@ -51,7 +51,7 @@ module "project_factory" {
 
   # Hub & Spoke WIF configuration
   enable_wif        = true
-  wif_provider_name = "projects/12345/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
+  wif_pool_name     = "projects/12345/locations/global/workloadIdentityPools/github-pool"
   github_repository = "my-owner/my-repo"
 }
 ```
@@ -82,8 +82,8 @@ module "environment_factory" {
   folder_display_name = "My Application Environments"
   github_repository   = "my-owner/my-repo"
 
-  # Hub & Spoke: Pass the global WIF provider from openjusticeok/infrastructure
-  wif_provider_name   = "projects/12345/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
+  # Hub & Spoke: Pass the global WIF pool from openjusticeok/infrastructure
+  wif_pool_name       = "projects/12345/locations/global/workloadIdentityPools/github-pool"
 
   environments = ["dev", "stg", "prod"]
 

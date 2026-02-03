@@ -4,20 +4,20 @@
 
 ### Breaking Changes
 
-- **WIF Refactor - Hub & Spoke Model**: The `project-factory` and `environment-factory` modules no longer create Workload Identity Pools and Providers. Instead, they consume a global provider created by `openjusticeok/infrastructure`.
+- **WIF Refactor - Hub & Spoke Model**: The `project-factory` and `environment-factory` modules no longer create Workload Identity Pools and Providers. Instead, they consume a global pool created by `openjusticeok/infrastructure`.
   
   **Migration Required:**
   - Remove `wif_pool_id` and `wif_provider_id` variables (no longer supported)
-  - Add `wif_provider_name` variable with the full resource name from `openjusticeok/infrastructure`
-  - Example: `wif_provider_name = "projects/12345/locations/global/workloadIdentityPools/github-pool/providers/github-provider"`
+  - Add `wif_pool_name` variable with the full resource name from `openjusticeok/infrastructure`
+  - Example: `wif_pool_name = "projects/12345/locations/global/workloadIdentityPools/github-pool"`
 
   **Why:** This prevents hitting GCP quota limits on WIF pools (max 10 per project) and centralizes identity security policy in `openjusticeok/infrastructure`. This is the "Hub & Spoke" architecture.
 
-- **New required variable**: `wif_provider_name` (string) - The full resource name of the global WIF provider
+- **New required variable**: `wif_pool_name` (string) - The full resource name of the global WIF pool
 
 ### Added
 - Support for Hub & Spoke WIF architecture
-- Validation for `wif_provider_name` format
+- Validation for `wif_pool_name` format
 - Demo project in `openjusticeok/infrastructure` to validate the new pattern
 
 ### Removed

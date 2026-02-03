@@ -20,7 +20,7 @@ variable "tofu_sa_role" {
 
 # --- Variables for Workload Identity Federation (WIF) ---
 variable "enable_wif" {
-  description = "If true, creates IAM binding to allow GitHub Actions to impersonate the Tofu provisioner service account via the global WIF provider. Requires wif_provider_name and github_repository to be set."
+  description = "If true, creates IAM binding to allow GitHub Actions to impersonate the Tofu provisioner service account via the global WIF pool. Requires wif_pool_name and github_repository to be set."
   type        = bool
   default     = false
 }
@@ -35,14 +35,14 @@ variable "github_repository" {
   }
 }
 
-variable "wif_provider_name" {
-  description = "The full resource name of the global Workload Identity Provider from openjusticeok/infrastructure (e.g., 'projects/12345/locations/global/workloadIdentityPools/github-pool/providers/github-provider'). Required when enable_wif is true."
+variable "wif_pool_name" {
+  description = "The full resource name of the global Workload Identity Pool from openjusticeok/infrastructure (e.g., 'projects/12345/locations/global/workloadIdentityPools/github-pool'). Required when enable_wif is true."
   type        = string
   default     = null
 
   validation {
-    condition     = var.wif_provider_name == null || can(regex("^projects/[0-9]+/locations/global/workloadIdentityPools/[a-z0-9-]+/providers/[a-z0-9-]+$", var.wif_provider_name))
-    error_message = "wif_provider_name must be a full resource name in the format: projects/{PROJECT_ID}/locations/global/workloadIdentityPools/{POOL_ID}/providers/{PROVIDER_ID}"
+    condition     = var.wif_pool_name == null || can(regex("^projects/[0-9]+/locations/global/workloadIdentityPools/[a-z0-9-]+$", var.wif_pool_name))
+    error_message = "wif_pool_name must be a full resource name in the format: projects/{PROJECT_ID}/locations/global/workloadIdentityPools/{POOL_ID}"
   }
 }
 

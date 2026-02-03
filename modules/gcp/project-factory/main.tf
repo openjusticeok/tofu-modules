@@ -163,15 +163,15 @@ resource "google_storage_bucket_iam_member" "project_sa_state_bucket_read_access
 # --- Workload Identity Federation (WIF) Resources ---
 
 # IAM binding to allow GitHub Actions to impersonate the Tofu provisioner service account
-# Uses the global WIF provider from openjusticeok/infrastructure (Hub & Spoke model)
+# Uses the global WIF pool from openjusticeok/infrastructure (Hub & Spoke model)
 resource "google_service_account_iam_member" "github_wif_binding" {
   count = var.enable_wif ? 1 : 0
 
   service_account_id = google_service_account.tofu_sa.name
   role               = "roles/iam.workloadIdentityUser"
 
-  # Trust the GitHub repo using the global provider
-  member = "principalSet://iam.googleapis.com/${var.wif_provider_name}/attribute.repository/${var.github_repository}"
+  # Trust the GitHub repo using the global pool
+  member = "principalSet://iam.googleapis.com/${var.wif_pool_name}/attribute.repository/${var.github_repository}"
 
   depends_on = [google_service_account.tofu_sa]
 }

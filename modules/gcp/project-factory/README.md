@@ -51,10 +51,9 @@ module "project_factory" {
 | `activate_apis` | The list of apis to activate within the project. | `list(string)` | See `variables.tf` | no |
 | `tofu_sa_name` | OpenTofu Provisioner service account name for the project. | `string` | `"tofu-provisioner"` | no |
 | `tofu_sa_role` | A role to give the OpenTofu Provisioner Service Account for the project. | `string` | `"roles/owner"` | no |
-| `enable_wif` | If true, creates Workload Identity Federation resources to allow GitHub Actions to impersonate the Tofu provisioner service account. | `bool` | `false` | no |
+| `enable_wif` | If true, creates IAM binding to allow GitHub Actions to impersonate the Tofu provisioner service account via the global WIF pool. | `bool` | `false` | no |
 | `github_repository` | The GitHub repository (in 'owner/repo' format) that should be allowed to impersonate the Tofu provisioner service account via WIF. Required if enable_wif is true. | `string` | `null` | no |
-| `wif_pool_id` | The ID for the Workload Identity Pool. | `string` | `"github-actions-pool"` | no |
-| `wif_provider_id` | The ID for the Workload Identity Provider within the pool. | `string` | `"github-provider"` | no |
+| `wif_pool_name` | The full resource name of the global Workload Identity Pool from openjusticeok/infrastructure (e.g., 'projects/12345/locations/global/workloadIdentityPools/github-pool'). Required if enable_wif is true. | `string` | `null` | no |
 
 ## Outputs
 
@@ -65,5 +64,5 @@ module "project_factory" {
 | `project_name` | The name of the created project. |
 | `tofu_sa_email` | The email of the Tofu service account. |
 | `tofu_state_bucket_name` | The name of the Tofu state bucket. |
-| `wif_pool_name` | The name of the WIF pool. |
-| `wif_provider_name` | The name of the WIF provider. |
+| `wif_pool_name` | The global WIF pool name passed to this module. Only set if enable_wif is true. |
+| `github_actions_sa_email` | The service account email for GitHub Actions to impersonate. Only set if enable_wif is true. |

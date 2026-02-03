@@ -28,9 +28,9 @@ module "project_factory" {
   ]
 
   # Optional: Enable WIF for GitHub Actions integration (Hub & Spoke model)
-  # Requires a global WIF provider from openjusticeok/infrastructure
+  # Requires a global WIF pool from openjusticeok/infrastructure
   enable_wif        = true
-  wif_provider_name = "projects/12345/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
+  wif_pool_name     = "projects/12345/locations/global/workloadIdentityPools/github-pool"
   github_repository = "openjusticeok/example-project" # Replace with your GitHub repo
 }
 
@@ -60,9 +60,9 @@ output "tofu_sa_email" {
   value       = module.project_factory.tofu_sa_email
 }
 
-output "wif_audience" {
-  description = "The WIF audience for GitHub Actions (if enabled)"
-  value       = module.project_factory.wif_audience
+output "wif_pool_name" {
+  description = "The WIF pool name for GitHub Actions (if enabled)"
+  value       = module.project_factory.wif_pool_name
 }
 
 output "github_actions_sa_email" {
