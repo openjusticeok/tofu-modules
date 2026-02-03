@@ -27,8 +27,10 @@ module "project_factory" {
     "cloudbuild.googleapis.com", # Additional API for this project
   ]
 
-  # Optional: Enable WIF for GitHub Actions integration
+  # Optional: Enable WIF for GitHub Actions integration (Hub & Spoke model)
+  # Requires a global WIF provider from openjusticeok/infrastructure
   enable_wif        = true
+  wif_provider_name = "projects/12345/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
   github_repository = "openjusticeok/example-project" # Replace with your GitHub repo
 }
 

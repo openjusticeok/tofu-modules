@@ -56,24 +56,17 @@ output "tofu_sa_unique_id" {
   value       = google_service_account.tofu_sa.unique_id
 }
 
-# --- WIF Outputs ---
-output "wif_pool_name" {
-  description = "The full name of the Workload Identity Pool. Only set if enable_wif is true."
-  value       = var.enable_wif ? google_iam_workload_identity_pool.github_pool[0].name : null
-}
+# --- WIF Outputs (Hub & Spoke Model) ---
+# Note: WIF Pool and Provider are managed centrally in openjusticeok/infrastructure
+# This module only creates IAM bindings to the global provider
 
 output "wif_provider_name" {
-  description = "The full name of the Workload Identity Provider. Only set if enable_wif is true."
-  value       = var.enable_wif ? google_iam_workload_identity_pool_provider.github_provider[0].name : null
+  description = "The global WIF provider name passed to this module. Only set if enable_wif is true."
+  value       = var.enable_wif ? var.wif_provider_name : null
 }
 
 output "github_actions_sa_email" {
   description = "The service account email for GitHub Actions to impersonate. Only set if enable_wif is true."
   value       = var.enable_wif ? google_service_account.tofu_sa.email : null
-}
-
-output "wif_audience" {
-  description = "The audience value to use in GitHub Actions for WIF authentication. Only set if enable_wif is true."
-  value       = var.enable_wif ? "//iam.googleapis.com/${google_iam_workload_identity_pool.github_pool[0].name}/providers/${var.wif_provider_id}" : null
 }
 

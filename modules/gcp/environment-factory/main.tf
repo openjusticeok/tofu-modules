@@ -15,8 +15,9 @@ module "project" {
   tofu_sa_name      = var.tofu_sa_name
   tofu_sa_role      = var.tofu_sa_role
 
-  # Enable Tofu backend setup and WIF for each project
-  enable_wif = true
+  # Hub & Spoke: Use global WIF provider instead of creating our own
+  enable_wif        = true
+  wif_provider_name = var.wif_provider_name
 
   # Active APIs
   activate_apis = var.activate_apis
