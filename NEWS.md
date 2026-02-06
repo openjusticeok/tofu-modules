@@ -1,5 +1,43 @@
 # News
 
+## v0.7.0 (2026-02-06)
+
+### New Features
+
+- **Cross-Project Artifact Promotion Support**: Added support for promoting container images and GCE disk images between projects (e.g., dev → prod).
+  
+  **For `project-factory`:**
+  - Added `cross_project_artifact_access` variable for single-project use cases
+  - Added `google_artifact_registry_repository_iam_member.cross_project_reader` resource
+  - Added `google_storage_bucket_iam_member.cross_project_bucket_reader` resource
+  - Artifact Registry API (`artifactregistry.googleapis.com`) now included in default `activate_apis` list
+  
+  **For `environment-factory`:**
+  - Added `enable_cross_env_artifacts` variable (default: `false`). When enabled, creates standalone IAM resources that grant each environment read access to ALL lower environments (prod can read from stg and dev, stg can read from dev)
+  - Added `region` variable for artifact registry location configuration
+  - Implements automatic waterfall promotion chain: dev (index 0) → stg (index 1) → prod (index 2)
+  - **Architecture Note**: Cross-project IAM bindings are created as standalone resources after all projects are created, avoiding circular dependency issues
+  
+  **Use Case**: Enable CI/CD pipelines to copy tested artifacts from dev to prod without rebuilding, ensuring immutable, traceable deployments.
+
+### Added
+
+- `project-factory.cross_project_artifact_access` variable - Configure cross-project artifact registry and GCS access (for single-project use)
+- `environment-factory.enable_cross_env_artifacts` variable - Enable automatic cross-environment artifact access
+- `environment-factory.region` variable - Configure region for artifact registries (default: us-central1)
+- `environment-factory` standalone IAM resources for cross-environment access (avoids circular dependencies)
+- Artifact Registry API to default activated APIs list
+
+### Fixed
+
+- Resolved circular dependency in `environment-factory` when `enable_cross_env_artifacts = true`. The module now creates cross-project IAM bindings as standalone resources that depend on all projects being created first, rather than passing them as inputs to the project-factory module.
+
+### Documentation
+
+- Updated all READMEs and examples to document new artifact promotion features
+- Clarified architecture: `environment-factory` creates standalone IAM resources; `project-factory` accepts `cross_project_artifact_access` as input for single-project use cases
+- Added example showing cross-project artifact access configuration
+
 ## v0.6.0 (2026-02-03)
 
 ### Breaking Changes

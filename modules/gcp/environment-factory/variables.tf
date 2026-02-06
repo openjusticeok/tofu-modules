@@ -70,3 +70,15 @@ variable "wif_pool_name" {
   description = "The full resource name of the global Workload Identity Pool from openjusticeok/infrastructure (e.g., 'projects/12345/locations/global/workloadIdentityPools/github-pool'). Passed to all environment projects."
   type        = string
 }
+
+variable "enable_cross_env_artifacts" {
+  description = "Enable cross-environment artifact promotion. When true, grants each environment read access to all lower environments' artifact registries (e.g., prod can read from staging and dev)"
+  type        = bool
+  default     = false
+}
+
+variable "region" {
+  description = "The GCP region for artifact registries (used for cross-project access configuration)"
+  type        = string
+  default     = "us-central1"
+}

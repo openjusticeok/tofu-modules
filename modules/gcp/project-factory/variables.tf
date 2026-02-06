@@ -154,7 +154,19 @@ variable "activate_apis" {
     "iamcredentials.googleapis.com",
     "logging.googleapis.com",
     "monitoring.googleapis.com",
+    "artifactregistry.googleapis.com",
   ]
+}
+
+variable "cross_project_artifact_access" {
+  description = "List of external projects to grant artifact registry and GCS read access for promotion workflows. Format: [{project_id, location, repository, bucket_name}]"
+  type = list(object({
+    project_id  = string
+    location    = string
+    repository  = string
+    bucket_name = string
+  }))
+  default = []
 }
 
 variable "activate_api_identities" {

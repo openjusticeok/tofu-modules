@@ -175,3 +175,33 @@ resource "google_service_account_iam_member" "github_wif_binding" {
 
   depends_on = [google_service_account.tofu_sa]
 }
+
+# Cross-project Artifact Registry access (for promotion workflows)
+# Grants THIS project's provisioner SA read access to OTHER projects' registries
+resource "google_artifact_registry_repository_iam_member" "cross_project_reader" {
+  for_each = {
+    for idx, access in var.cross_project_artifact_access : idx => access
+  }
+
+  project    = each.value.project_id
+  location   = each.value.location
+  repository = each.value.repository
+
+  role   = "roles/artifactregistry.reader"
+  member = "serviceAccount:${google_service_account.tofu_sa.email}"
+
+  depends_on = [google_service_account.tofu_sa]
+}
+
+# Cross-project GCS bucket access for GCE images
+resource "google_storage_bucket_iam_member" "cross_project_bucket_reader" {
+  for_each = {
+    for idx, access in var.cross_project_artifact_access : idx => access
+  }
+
+  bucket = each.value.bucket_name
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${google_service_account.tofu_sa.email}"
+
+  depends_on = [google_service_account.tofu_sa]
+}
